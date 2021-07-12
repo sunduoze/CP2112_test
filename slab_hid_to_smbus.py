@@ -20,6 +20,13 @@ HID_SMBUS_STATUS_Return_Code = {
     0x16: "HID_SMBUS_DEVICE_NOT_SUPPORTED	",  # 0x16
 }
 
+status_return_Code = {
+    0x00: "HID_SMBUS_S0_IDLE		",  # 0x00 No transfers are currently active on the bus.
+    0x01: "HID_SMBUS_S0_BUSY		",  # 0x01 A read or write transfer is in progress.
+    0x02: "HID_SMBUS_S0_COMPLETE	",  # 0x02 A read or write transfer completed without error and without etry.
+    0x03: "HID_SMBUS_S0_ERROR	    ",  # 0x03 A read or write transfer completed with an error.
+}
+
 # Micreosoft types to ctypes
 WORD = c_ushort
 DWORD = c_ulong
@@ -150,33 +157,18 @@ class hid_smbus:
         ret = self.__dll.HidSmbus_ForceReadResponse(device, numBytesToRead)
         return ret, HID_SMBUS_STATUS_Return_Code[ret]
 
-    def HidSmbus_GetReadResponse(self, device: c_void_p, status: BYTE, buffer: pointer,  # ??????????????????
-                                 bufferSize: BYTE, numBytesRead: pointer):
-
-        # HID_SMBUS_STATUS
-        # HidSmbus_GetReadResponse(HID_SMBUS_DEVICE
-        # device,
-        # HID_SMBUS_S0 * status, BYTE * buffer, BYTE
-        # bufferSize,
-        # BYTE * numBytesRead
-
+    def HidSmbus_GetReadResponse(self, device: c_void_p, status: pointer, buffer: pointer, numBytesRead: pointer):
         """
         :param device:
         :param status:
         :param buffer: BYTE pointer
-        :param bufferSize:
         :param numBytesRead: BYTE pointer
         :return:
         """
         ret = self.__dll.HidSmbus_GetReadResponse(device, status, buffer,
-                                                  bufferSize, numBytesRead)
-        status_return_Code = {
-            0x00: "HID_SMBUS_S0_IDLE		",  # 0x00 No transfers are currently active on the bus.
-            0x01: "HID_SMBUS_S0_BUSY		",  # 0x01 A read or write transfer is in progress.
-            0x02: "HID_SMBUS_S0_COMPLETE	",  # 0x02 A read or write transfer completed without error and without etry.
-            0x03: "HID_SMBUS_S0_ERROR	    ",  # 0x03 A read or write transfer completed with an error.
-        }
-        print(status_return_Code[status.value])
+                                                  self.I2C_RECEIVE_BUFFER_SIZE, numBytesRead)
+
+        # print(status_return_Code[status.value])
 
         return ret, HID_SMBUS_STATUS_Return_Code[ret]
 
