@@ -2,7 +2,6 @@ from ctypes import *
 from slab_hid_to_smbus import hid_smbus
 import time
 
-
 # try:
 cp2112 = hid_smbus()
 cp2112_vid = c_ushort(0x10C4)
@@ -25,6 +24,7 @@ def cp2112_gpio_test(dev):
         ret = cp2112.HidSmbus_WriteLatch(dev, c_byte(0x00), c_byte(0xFF))
         time.sleep(0.05)
     return ret, error_info
+
 
 def cp2112_get_lib_version(dev: c_void_p):
     status1 = c_byte()
@@ -75,8 +75,8 @@ def set_smbus_config(dev_x: c_void_p, speed: c_ulong, time_out: c_ushort, retry:
     return ret
 
 
-def reg_addr_read_and_read(dev_x: c_void_p, dev_addr: c_byte, reg_addr_len: c_byte, reg_addr: c_byte * 16,
-                           n_byte_to_read: c_ushort):
+def reg_addr_read(dev_x: c_void_p, dev_addr: c_byte, reg_addr_len: c_byte, reg_addr: c_byte * 16,
+                  n_byte_to_read: c_ushort):
     # dev_addr = c_byte(0x16)
     # n_byte_to_read = c_ushort(6)
     # reg_addr_len = c_byte(1)
@@ -95,8 +95,15 @@ def reg_addr_read_and_read(dev_x: c_void_p, dev_addr: c_byte, reg_addr_len: c_by
     BufferArray = c_ubyte * cp2112.I2C_RECEIVE_BUFFER_SIZE_INT
     buffer = BufferArray()
     numBytesRead = c_byte()
+    cnt = 0
     while status.value != 0x02:
-        ret2, error_info = cp2112.HidSmbus_GetReadResponse(dev_x, pointer(status), pointer(buffer), pointer(numBytesRead))
+        ret2, error_info = cp2112.HidSmbus_GetReadResponse(dev_x, pointer(status), pointer(buffer),
+                                                           pointer(numBytesRead))
+        # print("A error info:", ret2, error_info)
+        cnt = cnt + 1
+        if cnt > 5:
+            break
+
     # print("A error info:", ret2, error_info)
     ret = ret0 + ret1 + ret2
     if numBytesRead.value == n_byte_to_read.value:
@@ -115,10 +122,52 @@ def reg_addr_read_and_read(dev_x: c_void_p, dev_addr: c_byte, reg_addr_len: c_by
         print("HidSmbus_GetSmbusConfig error info:", ret, error_info)
     return ret, buffer
 
+
+def read(dev_x: c_void_p, dev_addr: c_byte, n_byte_to_read: c_ushort):
+    # read request
+    ret, error_info = cp2112.HidSmbus_ReadRequest(dev_x, dev_addr, n_byte_to_read)
+    # print("1 error info:", ret, error_info)
+    # ForceReadResponse
+    ret1, error_info = cp2112.HidSmbus_ForceReadResponse(dev_x, n_byte_to_read)
+    # print("3 error info:", ret1, error_info)
+
+    # get read response
+    status = c_ubyte()
+    BufferArray = c_ubyte * cp2112.I2C_RECEIVE_BUFFER_SIZE_INT
+    buffer = BufferArray()
+    numBytesRead = c_byte()
+    cnt = 0
+    while status.value != 0x02:
+        ret2, error_info = cp2112.HidSmbus_GetReadResponse(dev_x, pointer(status), pointer(buffer),
+                                                           pointer(numBytesRead))
+        # print("A error info:", ret2, error_info)
+        cnt = cnt + 1
+        if cnt > 5:
+            break
+
+    # print("A error info:", ret2, error_info)
+    # ret = ret0 + ret1 + ret2
+    if numBytesRead.value == n_byte_to_read.value:
+        print("-----recv completed-----")
+        print("0x%x" % buffer[0])
+        print("0x%x" % buffer[1])
+        print("0x%x" % buffer[2])
+        print("0x%x" % buffer[3])
+        print("0x%x" % buffer[4])
+        print("0x%x" % buffer[5])
+    else:
+        print("-----recv fail-----")
+        print(ret)
+
+    if ret != 0:
+        print("HidSmbus_GetSmbusConfig error info:", ret, error_info)
+    # return ret, buffer
+    return ret, error_info
+
+
 # bug, please discard it
 def reg_addr_read_and_read_auto_response(dev_addr: c_byte, reg_addr_len: c_byte, reg_addr: c_byte * 16,
-                           n_byte_to_read: c_ushort):
-
+                                         n_byte_to_read: c_ushort):
     ret, error_info = cp2112.HidSmbus_AddressReadRequest(dev, dev_addr, n_byte_to_read,
                                                          reg_addr_len, reg_addr)
     print("2 error info:", ret, error_info)
@@ -142,7 +191,6 @@ def reg_addr_read_and_read_auto_response(dev_addr: c_byte, reg_addr_len: c_byte,
     ret, error_info = cp2112.HidSmbus_ReadRequest(dev, dev_addr, n_byte_to_read)
     print("1 error info:", ret, error_info)
 
-
     while status.value != 0x02:
         ret, error_info = cp2112.HidSmbus_GetReadResponse(dev, pointer(status), pointer(buffer), pointer(numBytesRead))
         # print("A error info:", ret, error_info)
@@ -159,34 +207,43 @@ def reg_addr_read_and_read_auto_response(dev_addr: c_byte, reg_addr_len: c_byte,
     return buffer
 
 
-# # Micreosoft types to ctypes
-# WORD = c_ushort
-# DWORD = c_ulong
-# DWORD64 = c_ulonglong
-# UNIT_PTR = c_ulong
-# LONG = c_long
-# BYTE = c_byte
-# BOOL = c_bool
-# LPBYTE = POINTER(c_ubyte)
-# LPTSTR = POINTER(c_char)
-# HANDLE = c_void_p
-# PVOID = c_void_p
+def get_status(dev: c_void_p):
+    print("-------------get_status--")
+    ret, error_info = cp2112.HidSmbus_TransferStatusRequest(dev)
+    print("7 error info:", ret, error_info)
+
+    status = c_byte()
+    detail_status = c_byte()
+    buffer_array = c_byte * 16
+    buffer = buffer_array()
+    num_retrys = c_ushort()
+    bytes_read = c_ushort()
+    ret, error_info = cp2112.HidSmbus_GetTransferStatusResponse(dev, status, detail_status, num_retrys, bytes_read)
+    # print("A error info:", ret, error_info)
+    print(status.value, cp2112.status_return_Code[status.value])
+    if status.value == 0x01:  # HID_SMBUS_S0_BUSY
+        print(detail_status.value, cp2112.HID_SMBUS_S0_BUSY[detail_status.value])
+    elif status.value == 0x03:  # HID_SMBUS_S0_ERROR
+        print(detail_status.value, cp2112.HID_SMBUS_S0_ERROR[detail_status.value])
+    # else:
+    #     print(detail_status.value)
+
+    print("num_retrys", num_retrys.value)
+    print("bytes_read", bytes_read.value)
+    print("-------end of get_status----------")
+    return ret, error_info
 
 
 if __name__ == '__main__':
 
-
-
-    # judge cp2112 dev status & get num Devices
+    # 1. judge cp2112 dev status & get num Devices
     numDevices = c_ulong()
     cp2112.HidSmbus_GetNumDevices(numDevices, cp2112_vid, cp2112_pid)
     if numDevices.value != 1:
         print("ERROR: No Device Connected or device over 1, dev_num:", numDevices.value)
         exit()
 
-
-
-    # Open cp2112 device
+    # 2. Open cp2112 device
     is_opened = c_bool(False)
     ret, error_info = cp2112.HidSmbus_Open(dev, c_ulong(numDevices.value - 1), cp2112_vid, cp2112_pid)
     cp2112.HidSmbus_IsOpened(dev, is_opened)
@@ -199,46 +256,46 @@ if __name__ == '__main__':
     # ret, error_info = cp2112.HidSmbus_Reset(dev)
     # print("0 error info:", ret, error_info)
 
-    set_smbus_config(dev, c_ulong(100000), c_ushort(100), c_ushort(3))
+    # 3. set smbus configuration
+    time_out = 100  # ms
+    set_smbus_config(dev, c_ulong(100000), c_ushort(time_out), c_ushort(3))
 
-    # reg addr address read
-    """ BM191 test
-        ADDR_W:0x16
-        W:0x3C
-        ADDR_R:0x16
-        R:0xxx
-    """
-    byte_array = c_byte * 16
-    reg_addr_buf = byte_array(0x3C)
-    reg_addr_read_and_read(dev, c_byte(0x16), c_byte(1), reg_addr_buf, c_ushort(2))
-
-    # # test cp2112 gpio
-    # cp2112_gpio_test(dev)
-
-
-    # # read request
-    # dev_addr = c_byte(0x16)
-    # # address = c_byte(int("16", 16))
-    # n_bytes = c_ushort(2)
-    # ret, error_info = cp2112.HidSmbus_ReadRequest(dev, dev_addr, n_bytes)
-    # print("1 error info:", ret, error_info)
-
-
-    # write request, need add cancel tansfer ?
+    # 4. write request, need add cancel tansfer ?
     dev_addr = c_byte(0x16)
     buffer_array = c_byte * 16
-    buffer = buffer_array(0x3C, 0x00, 0x01, 0x02)
-    n_bytes = c_byte(1)
+    buffer = buffer_array(0x80, 0xEE, 0x03, 0x84)
+    n_bytes = c_byte(4)
     ret, error_info = cp2112.HidSmbus_WriteRequest(dev, dev_addr, pointer(buffer), n_bytes)
-    print("5 error info:", ret, error_info)
-    ret, error_info = cp2112.HidSmbus_CancelTransfer(dev)
-    print("6 error info:", ret, error_info)
+    # print("5 error info:", ret, error_info)
+    time.sleep(time_out * 0.001)
+    # ret, error_info = cp2112.HidSmbus_CancelTransfer(dev)
 
+    # write other data
+    buffer = buffer_array(0x81, 0xFF, 0x03, 0xAD)
+    n_bytes = c_byte(4)
+    ret, error_info = cp2112.HidSmbus_WriteRequest(dev, dev_addr, pointer(buffer), n_bytes)
+    time.sleep(time_out * 0.001)
 
-    ret, error_info = cp2112.HidSmbus_TransferStatusRequest(dev)
-    print("7 error info:", ret, error_info)
+    get_status(dev)
 
+    # ret, error_info = cp2112.HidSmbus_CancelTransfer(dev)
+    # print("6 error info:", ret, error_info)
 
+    # 5. reg addr address read
+    # BM191 test ADDR_W:0x16 W:0x80 ADDR_R:0x16 R:0xEE 0x03 0x60(crc8)
+    byte_array = c_byte * 16
+    reg_addr_buf = byte_array(0x81)
+    reg_addr_read(dev, c_byte(0x16), c_byte(1), reg_addr_buf, c_ushort(3))
 
-    # get part number & version
+    # 6. smbus read function
+    # read(dev, c_byte(0x16), c_ushort(3))
+
+    # get_status(dev)
+
+    # 6. test cp2112 gpio
+    cp2112_gpio_test(dev)
+
+    get_status(dev)
+
+    # 8. get part number & version
     cp2112_get_lib_version(dev)

@@ -20,12 +20,7 @@ HID_SMBUS_STATUS_Return_Code = {
     0x16: "HID_SMBUS_DEVICE_NOT_SUPPORTED	",  # 0x16
 }
 
-status_return_Code = {
-    0x00: "HID_SMBUS_S0_IDLE		",  # 0x00 No transfers are currently active on the bus.
-    0x01: "HID_SMBUS_S0_BUSY		",  # 0x01 A read or write transfer is in progress.
-    0x02: "HID_SMBUS_S0_COMPLETE	",  # 0x02 A read or write transfer completed without error and without etry.
-    0x03: "HID_SMBUS_S0_ERROR	    ",  # 0x03 A read or write transfer completed with an error.
-}
+
 
 # Micreosoft types to ctypes
 WORD = c_ushort
@@ -60,6 +55,34 @@ PVOID = c_void_p
 class hid_smbus:
     I2C_RECEIVE_BUFFER_SIZE_INT = 61
     I2C_RECEIVE_BUFFER_SIZE = BYTE(I2C_RECEIVE_BUFFER_SIZE_INT)
+
+    status_return_Code = {
+        0x00: "HID_SMBUS_S0_IDLE",      # 0x00 No transfers are currently active on the bus.
+        0x01: "HID_SMBUS_S0_BUSY",      # 0x01 A read or write transfer is in progress.
+        0x02: "HID_SMBUS_S0_COMPLETE",  # 0x02 A read or write transfer completed without error and without etry.
+        0x03: "HID_SMBUS_S0_ERROR",     # 0x03 A read or write transfer completed with an error.
+    }
+
+    # detailedStatus_return_Code
+    # HID_SMBUS_S0_IDLE = {
+    #     # initial (first) Transfer Status Request 1xxx xxxx SDA line is stuck low.
+    #     #                                         x1xx xxxx SCL line is stuck low.
+    #     # Subsequent Transfer Status Requests     xxxx xxxx     detailedStatus value is undefined.
+    # }
+    HID_SMBUS_S0_BUSY = {
+        0x00: "HID_SMBUS_S1_BUSY_ADDRESS_ACKED  ",  # The slave address was acknowledged.
+        0x01: "HID_SMBUS_S1_BUSY_ADDRESS_NACKED ",  # The slave address has not been acknowledged.
+        0x02: "HID_SMBUS_S1_BUSY_READING        ",  # Read data phase in progress.
+        0x03: "HID_SMBUS_S1_BUSY_WRITING        ",  # Write data phase in progress.
+    }
+    HID_SMBUS_S0_ERROR = {
+        0x00: "HID_SMBUS_S1_ERROR_TIMEOUT_NACK        ",  # Tranfer timeout: SMBus slave address was NACKed
+        0x01: "HID_SMBUS_S1_ERROR_TIMEOUT_BUS_NOT_FREE",  # Tranfser timeout: SMBus not free (or SCL low timeout occurred)
+        0x02: "HID_SMBUS_S1_ERROR_ARB_LOST            ",  # Bus arbitration was lost
+        0x03: "HID_SMBUS_S1_ERROR_READ_INCOMPLETE     ",  # Read was incomplete
+        0x04: "HID_SMBUS_S1_ERROR_WRITE_INCOMPLETE    ",  # Write was incomplete
+        0x05: "HID_SMBUS_S1_ERROR_SUCCESS_AFTER_RETRY ",  # Transfer completed after numRetries number of retries
+    }
 
     def __init__(self):
         if platform.system() == "Windows":
@@ -147,7 +170,7 @@ class hid_smbus:
                                                      targetAddressSize, targetAddress)
         return ret, HID_SMBUS_STATUS_Return_Code[ret]
 
-    def HidSmbus_ForceReadResponse(self, device: c_void_p, numBytesToRead: WORD):  # Verify, but don't know how to use.
+    def HidSmbus_ForceReadResponse(self, device: c_void_p, numBytesToRead: WORD):  # Verify
         """
         Forces the device to generate and send a read response
         :param device:
@@ -157,7 +180,8 @@ class hid_smbus:
         ret = self.__dll.HidSmbus_ForceReadResponse(device, numBytesToRead)
         return ret, HID_SMBUS_STATUS_Return_Code[ret]
 
-    def HidSmbus_GetReadResponse(self, device: c_void_p, status: pointer, buffer: pointer, numBytesRead: pointer):
+    def HidSmbus_GetReadResponse(self, device: c_void_p, status: pointer, buffer: pointer,  # verify
+                                 numBytesRead: pointer):
         """
         :param device:
         :param status:
@@ -184,13 +208,13 @@ class hid_smbus:
         ret = self.__dll.HidSmbus_WriteRequest(device, slaveAddress, buffer, numBytesToWrite)
         return ret, HID_SMBUS_STATUS_Return_Code[ret]
 
-    def HidSmbus_TransferStatusRequest(self, device: c_void_p):
+    def HidSmbus_TransferStatusRequest(self, device: c_void_p):  # Verify
         ret = self.__dll.HidSmbus_TransferStatusRequest(device)
         return ret, HID_SMBUS_STATUS_Return_Code[ret]
 
-    def HidSmbus_GetTransferStatusResponse(self, device: c_void_p, status: BYTE, detailedStatus: BYTE, buffer: pointer,  # ??????????????????
+    def HidSmbus_GetTransferStatusResponse(self, device: c_void_p, status: BYTE, detailedStatus: BYTE,  # ?-ing?
                                            numRetries: WORD, bytesRead: WORD):
-        ret = self.__dll.HidSmbus_GetTransferStatusResponse(device, status, pointer(detailedStatus), pointer(buffer),
+        ret = self.__dll.HidSmbus_GetTransferStatusResponse(device, pointer(status), pointer(detailedStatus),
                                                             pointer(numRetries), pointer(bytesRead))
         return ret, HID_SMBUS_STATUS_Return_Code[ret]
 
