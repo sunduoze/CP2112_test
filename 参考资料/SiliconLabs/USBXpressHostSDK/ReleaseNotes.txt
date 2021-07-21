@@ -1,0 +1,202 @@
+RELEASE NOTES
+=============
+Silicon Labs USBXpress Host SDK for USB bridge products for Windows
+
+Package version: 6.7.6
+Release date:    2018-11-12
+
+This package is the Windows Software Development Kit (SDK) for Silicon Labs
+USBXpress and Classic USB bridge products.  It includes support for the
+following products:
+
+* CP2102N   (VCP UART)
+* CP2102    (VCP UART)
+* CP2104    (VCP UART)
+* CP2105    (Dual VCP UART)
+* CP2108    (Quad VCP UART)
+* CP2110    (HID UART)
+* CP2112    (HID I2C)
+* CP2114    (USB Audio)
+* CP2130    (USB SPI)
+* CP2615    (USB Audio)
+
+The SDK is intended for application developers using the above Silicon
+Labs products.  The SDK provides interface libraries, header files,
+documentation and examples.
+
+This package does not contain the VCP driver or Direct Access
+Driver (USBXpress driver).  These driver packages can be found in their own
+installer packages, downloaded from the Silicon Labs web site.
+
+All host software support for Silicon Labs classic and USBXpress USB bridge
+devices has been combined into this single Software Development Kit.
+This combined SDK package now replaces the individual, per-device installer
+packages.
+
+The SDK is organized according to device.  During installation you can
+choose to install support for any or all of the devices.  Each device
+directory contains the following subdirectories:
+
+* Debug/Release - interface libraries and utility executables
+* Documentation - Data sheets, application notes, user guides and misc.
+* Examples - example programs using the interface libraries
+* include - header files used for compiling programs against the libraries
+
+OS VERSIONS
+-----------
+This package is supported on Windows 10, 8.1, 8, and 7.
+
+INSTALLING
+----------
+1. Run the .msi installer file
+2. Agree to the license agreement
+3. Choose which products to install
+4. Use the Browse button to choose the install location, or keep the default
+5. Click Next, then Install to install the SDK
+
+UNINSTALLING
+------------
+If you have the original .msi installer, re-run it and it will give you
+an option to remove the package.
+
+OR
+
+From your computer settings Programs and Features panel, find
+"Silicon Labs USBXpress Host SDK" and choose "Uninstall"
+
+******************************************************************************
+    RELEASE NOTES FOR 6.7.6 (2018-11-12)
+
+Changes for manufacturing and config tools
+==============================================================================
+MCUSW-94     | Corrects a problem where the VID of the part was being          
+             | overwritten when setting other configurable fields.             
+MCUSW-114    | Changed the format of the smt-operation guide to PDF.           
+MCUSW-115    | Removed unnecessary link commands for libslabhidtouart,         
+             | libslabhidtosmbus, libslabhiddevice, and libslab_usb_spi from   
+             | the makefile for cp210xsmt.                                     
+MCUSW-121    | Mac/Linux smt binaries are now statically linked with Silicon   
+             | Labs libraries.                                                 
+MCUSW-150    | Resolved an issue whereby CP2615[smt,cfg].exe failed to start   
+             | if Microsoft redistributable DLLs were not present on the       
+             | machine.                                                        
+MCUSW-295    | Fixed an issue where non-programable bits in the QuadPortConfig 
+             | field of a CP2108 configuration file corresponding to the state 
+             | of the suspend pin were being incorrectly compared during       
+             | verification.                                                   
+MCUSW-344    | Fixed a problem where the CP2615 utility cp2615smt did not      
+             | correctly erase previous configuration when programming a new   
+             | configuration.                                                  
+
+Changes for CP210x Runtime library
+==============================================================================
+MCUSW-237    | CP210x Runtime library no longer needs/requires to also be      
+             | linked to CP210x Manufacturing library, with the newly added    
+             | "discovery" APIs CP210xRT_GetNumDevices(), CP210xRT_Open() and  
+             | CP210xRT_Close().                                               
+
+Changes for HID SmBus library
+==============================================================================
+MCUSW-203    | On Linux, libslabhidtosmbus and libslabhidtouart now have a     
+             | dependency on libslabhiddevice so that your Linux apps no       
+             | longer need to explicitly link to libslabhiddevice.             
+
+Changes for HID UART library
+==============================================================================
+MCUSW-180    | Fix device indexing problem for CP2114 devices configured as    
+             | OUT-only or IN-only (for which the HID interface is MI_02).     
+
+Changes for CP210x Manufacturing library
+==============================================================================
+MCUSW-374    | GetFirmwareVersion() is now supported in the Manufacturing      
+             | library for the CP2105 and CP2108.                              
+
+Changes for Library language wrappers
+==============================================================================
+MCUSW-125    | Added the function HidSmbus_CancelIo to the HidtoSMBUS library  
+             | on MacOS X.                                                     
+
+Changes for SiUSBXp Direct Access Library
+==============================================================================
+MCUSW-179    | Reduce the timeout for the "Get Part Library version" command   
+             | only, called in SI_Open() to 50milliseconds.  This means old    
+             | firmware will experience this timeout.                          
+
+Changes for Installer packages
+==============================================================================
+MCUSW-116    | Removed data sheets, data shorts, errata and user guide         
+             | documents for deprecated VCP parts CP2101 and CP2103.           
+MCUSW-117    | Added a QuickStart Guide and a User Guide for the CP2114.       
+MCUSW-253    | Add "RCP App" customizer to USBXpress SDK package.              
+MCUSW-286    | Add CP2114 customizer to host SDK package.                      
+MCUSW-375    | Added HTML API documentation to Docs directory.                 
+MCUSW-378    | MacOS - Removed 32 bit code from binaries.                      
+
+Changes for Host side example code
+==============================================================================
+MCUSW-118    | Added header and library search paths to the libusb_example     
+             | xcode project for the CP2130 in order to pick up libusb from    
+             | the default location used by homebrew.                          
+MCUSW-159    | Added an example program called MacGPIOExample to show how to   
+             | use the GPIO pins on the Mac using the 5.x Mac VCP Driver.      
+MCUSW-163    | Added the HidUartExample.tar.gz source package to the           
+             | CP2110_4/Examples folder.                                       
+MCUSW-233    | Added cp2130_libusb_writeread_example(). All example operations 
+             | read the TransferPriority byte to determine endpoint            
+             | assignments.                                                    
+
+Changes for USB SPI library (CP2130)
+==============================================================================
+MCUSW-15     | Fix USB "direction" bug for CP213x_GetLock() (Windows           
+             | SLAB_USB_SPI.DLL CP2130 interface library), which put the       
+             | device into a Stall situation and subsequent API calls failed.  
+MCUSW-126    | Fix a bug where a file descriptor had not been properly closed  
+             | in CP213x_TransferWriteRead.                                    
+MCUSW-128    | SLAB_USB_SPI.h is now a single file for Windows, Mac, and       
+             | Linux.                                                          
+
+
+
+******************************************************************************
+    RELEASE NOTES FOR 6.7.5 (2017-05-26)
+
+Changes for CP210x Manufacturing library
+==============================================================================
+MCUSW-76     | Fixed a bug in manufacturing library                            
+             | CP210x_GetDeviceInterfaceString() function which presented on   
+             | being called for CP2105/CP2108 devices configured with the      
+             | USBXpress PID 0xEA61.                                           
+MCUSW-96     | CP210xManufacturingDLL.h has been fully SAL-annotated           
+             | (https://docs.microsoft.com/en-us/visualstudio/code-            
+             | quality/using-sal-annotations-to-reduce-c-cpp-code-defects).    
+
+Changes for Host side example code
+==============================================================================
+MCUSW-9      | The HidUartExample is now available for MacOS X.                
+MCUSW-10     | hidUARTExample now available for Linux.                         
+MCUSW-11     | The libusb example is now available for Mac and Linux in the    
+             | CP2130 package.                                                 
+
+Changes for manufacturing and config tools
+==============================================================================
+MCUSW-13     | Fixed a bug that prevented the programming of serial numbers on 
+             | the CP2102N using the cp210xsmt utility.                        
+
+Changes for Installer packages
+==============================================================================
+MCUSW-8      | SiLabs USBXpress SDK is now available as a debian package.      
+MCUSW-86     | CP2615 added to the SDK.                                        
+MCUSW-92     | Added a quick start guide and a user guide for the CP2102N to   
+             | the SDK package.                                                
+MCUSW-99     | This is the first release of our combined host SDK.  All host   
+             | software support for Silicon Labs classic and USBXpress USB     
+             | bridge devices has been combined into this single Software      
+             | Development Kit.  This combined SDK package now replaces the    
+             | individual, per-device installer packages.                      
+
+Changes for CP210x Runtime library
+==============================================================================
+MCUSW-95     | CP210xRuntimeDLL.h has been fully SAL-annotated                 
+             | (https://docs.microsoft.com/en-us/visualstudio/code-            
+             | quality/using-sal-annotations-to-reduce-c-cpp-code-defects).    
+
