@@ -3,7 +3,7 @@ __pycache__
 *.py[cod]
 *$py.class
 
-参考资料
+# 参考资料
 
 .venv
 .vscode

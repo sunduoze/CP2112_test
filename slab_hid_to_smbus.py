@@ -90,14 +90,14 @@ class hid_smbus:
                 arch = "x64"
             else:
                 arch = "x86"
-            dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "native\Windows", arch,
+            dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "library\Windows", arch,
                                     "SLABHIDtoSMBus.dll")
         elif platform.system() == "Linux":
             if struct.calcsize(str('P')) * 8 == 64:
                 arch = "x86_64"
             else:
                 arch = "x86_32"
-            dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "native\Linux", arch,
+            dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "library\Linux", arch,
                                     "SLABHIDtoSMBus.dll")
         else:
             arch = ""
