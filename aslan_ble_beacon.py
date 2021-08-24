@@ -1,3 +1,14 @@
+
+# ASLAN
+# dev_addr:21
+# reg_addr:0A
+#
+# beacon enable W:03 84 01 4B 0D
+# Tx rate set   W:04 83 00 01 65 0D
+# Tx power set  W:03 82 01 0B 0D
+# Beacon data   W:1F 86 02 1B FF 01 F1 BE AC 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF 1A EB EB EC DD C3 00 1A 0D
+
+
 from ctypes import *
 from slab_hid_to_smbus import hid_smbus
 import time
@@ -244,14 +255,14 @@ def addr_write(dev_addr, reg_addr, reg_addr_len, data, data_len):
         buffer = buffer_array(reg_addr)
         n_bytes = c_byte(reg_addr_len)
         ret, error_info = cp2112.HidSmbus_WriteRequest(dev, dev_addr, pointer(buffer), n_bytes)
-        print("5 error info:", ret, error_info)
+        # print("5 error info:", ret, error_info)
         time.sleep(time_out * 0.001)
         # ret, error_info = cp2112.HidSmbus_CancelTransfer(dev)
 
     buffer = data # buffer_array(0x03, 0x84, 0x01, 0x4B, 0x0D)
     n_bytes = c_byte(data_len) # c_byte(5)
     ret, error_info = cp2112.HidSmbus_WriteRequest(dev, dev_addr, pointer(buffer), n_bytes)
-    print("5 error info:", ret, error_info)
+    # print("5 error info:", ret, error_info)
     time.sleep(time_out * 0.001)
 
     return ret
@@ -325,6 +336,39 @@ def aslan_pack_beacon_thermal_pin(status):
     return ret, error_info
 
 
+def enable_beacon_mode():
+    aslan_pack_beacon_thermal_pin(True)
+    time.sleep(6)
+    aslan_pack_beacon_config()
+    time.sleep(1)
+
+    #### enable
+    aslan_pack_beacon_status(True)
+    #### disable
+    # aslan_pack_beacon_status(False)
+
+    time.sleep(0.1)
+    aslan_pack_beacon_thermal_pin(False)
+    time.sleep(6)
+    print("-------end of ctrl----------enable\r\n\r\n")
+
+def disable_beacon_mode():
+    aslan_pack_beacon_thermal_pin(True)
+    time.sleep(6)
+    aslan_pack_beacon_config()
+    time.sleep(0.1)
+
+    #### enable
+    # aslan_pack_beacon_status(True)
+    #### disable
+    aslan_pack_beacon_status(False)
+
+    time.sleep(1)
+    aslan_pack_beacon_thermal_pin(False)
+    time.sleep(1)
+    print("-------end of ctrl----------disable\r\n\r\n")
+
+
 
 # dev_addr:21
 # reg_addr:0A
@@ -333,6 +377,62 @@ def aslan_pack_beacon_thermal_pin(status):
 # Tx rate set   W:04 83 00 01 65 0D
 # Tx power set  W:03 82 01 0B 0D
 # Beacon data   W:1F 86 02 1B FF 01 F1 BE AC 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF 1A EB EB EC DD C3 00 1A 0D
+
+
+from tkinter import *
+
+LOG_LINE_NUM = 0
+
+class GUI():
+    def __init__(self,init_window_name):
+        self.init_window_name = init_window_name
+
+
+    #设置窗口
+    def set_init_window(self):
+        self.init_window_name.title("蓝牙Beacon测试程序")           #窗口名
+        self.init_window_name.geometry('1068x681+10+10')
+        #self.init_window_name["bg"] = "pink"                                    #窗口背景色，其他背景色见：blog.csdn.net/chl0000/article/details/7657887
+        #self.init_window_name.attributes("-alpha",0.9)                          #虚化，值越小虚化程度越高
+        #标签
+        self.init_data_label = Label(self.init_window_name, text="按钮按下时，如果软件闪退，说明硬件电路连接存在问题！")
+        self.init_data_label.grid(row=0, column=0)
+        # self.result_data_label = Label(self.init_window_name, text="输出结果")
+        # self.result_data_label.grid(row=0, column=12)
+        # self.log_label = Label(self.init_window_name, text="日志")
+        # self.log_label.grid(row=12, column=0)
+        #按钮
+        # self.str_trans_to_md5_button = Button(self.init_window_name, text="字符串转MD5", bg="lightblue", width=10,command=self.str_trans_to_md5)  # 调用内部方法  加()为直接调用
+
+        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="使能Beacon", bg="lightblue", width=50,
+                                                height=10, command=self.enable_beacon)
+        self.enable_beacon_mode_button.grid(row=10, column=10)
+
+        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="关闭Beacon", bg="lightblue", width=50,
+                                                height=10, command=self.disable_beacon)
+        self.enable_beacon_mode_button.grid(row=100, column=10)
+
+
+    #功能函数
+    def enable_beacon(self):
+        enable_beacon_mode()
+    def disable_beacon(self):
+        disable_beacon_mode()
+
+
+    #获取当前时间
+    def get_current_time(self):
+        current_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+        return current_time
+
+
+def gui_start():
+    init_window = Tk()              # 实例化出一个父窗口
+    ui = GUI(init_window)
+    # 设置根窗口默认属性
+    ui.set_init_window()
+    init_window.mainloop()          # 父窗口进入事件循环，可以理解为保持窗口运行，否则界面不展示
+
 
 
 if __name__ == '__main__':
@@ -353,30 +453,13 @@ if __name__ == '__main__':
     else:
         print("cp2112 is not opened")
 
-    # reset smbus·
-    # ret, error_info = cp2112.HidSmbus_Reset(dev)
-    # print("0 error info:", ret, error_info)
-
     # 3. set smbus configuration
     time_out = 100  # ms
     set_smbus_config(dev, c_ulong(33000), c_ushort(time_out), c_ushort(3))
 
     time.sleep(0.1)
 
-    aslan_pack_beacon_thermal_pin(True)
-    time.sleep(1)
-    aslan_pack_beacon_config()
-    time.sleep(1)
-
-
-#### enable
-    aslan_pack_beacon_status(True)
-#### disable
-    # aslan_pack_beacon_status(False)
-
-    # time.sleep(1)
-    # aslan_pack_beacon_thermal_pin(False)
-    # time.sleep(6)
+    gui_start()
 
 
 
@@ -385,47 +468,3 @@ if __name__ == '__main__':
 
 
 
-
-
-
-
-
-    # # 4. write request, need add cancel tansfer ?
-    # dev_addr = c_byte(0x16)
-    # buffer_array = c_byte * 16
-    # buffer = buffer_array(0x80, 0xEE, 0x03, 0x84)
-    # n_bytes = c_byte(4)
-    # ret, error_info = cp2112.HidSmbus_WriteRequest(dev, dev_addr, pointer(buffer), n_bytes)
-    # # print("5 error info:", ret, error_info)
-    # time.sleep(time_out * 0.001)
-    # # ret, error_info = cp2112.HidSmbus_CancelTransfer(dev)
-    #
-    # # write other data
-    # buffer = buffer_array(0x81, 0xFF, 0x03, 0xAD)
-    # n_bytes = c_byte(4)
-    # ret, error_info = cp2112.HidSmbus_WriteRequest(dev, dev_addr, pointer(buffer), n_bytes)
-    # time.sleep(time_out * 0.001)
-    #
-    # get_status(dev)
-    #
-    # # ret, error_info = cp2112.HidSmbus_CancelTransfer(dev)
-    # # print("6 error info:", ret, error_info)
-    #
-    # # 5. reg addr address read
-    # # BM191 test ADDR_W:0x16 W:0x80 ADDR_R:0x16 R:0xEE 0x03 0x60(crc8)
-    # byte_array = c_byte * 16
-    # reg_addr_buf = byte_array(0x81)
-    # reg_addr_read(dev, c_byte(0x16), c_byte(1), reg_addr_buf, c_ushort(3))
-    #
-    # # 6. smbus read function
-    # # read(dev, c_byte(0x16), c_ushort(3))
-    #
-    # # get_status(dev)
-    #
-    # # 6. test cp2112 gpio
-    # cp2112_gpio_test(dev)
-    #
-    # get_status(dev)
-    #
-    # # 8. get part number & version
-    # cp2112_get_lib_version(dev)
