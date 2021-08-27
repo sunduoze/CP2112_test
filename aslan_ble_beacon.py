@@ -1,4 +1,3 @@
-
 # ASLAN
 # dev_addr:21
 # reg_addr:0A
@@ -12,6 +11,7 @@
 from ctypes import *
 from slab_hid_to_smbus import hid_smbus
 import time
+from serial_port import serial_read_data_from_cc2540
 
 # try:
 cp2112 = hid_smbus()
@@ -245,7 +245,6 @@ def get_status(dev: c_void_p):
     return ret, error_info
 
 
-
 def addr_write(dev_addr, reg_addr, reg_addr_len, data, data_len):
     time_out = 100
     # write request, need add cancel tansfer ?
@@ -259,19 +258,19 @@ def addr_write(dev_addr, reg_addr, reg_addr_len, data, data_len):
         time.sleep(time_out * 0.001)
         # ret, error_info = cp2112.HidSmbus_CancelTransfer(dev)
 
-    buffer = data # buffer_array(0x03, 0x84, 0x01, 0x4B, 0x0D)
-    n_bytes = c_byte(data_len) # c_byte(5)
+    buffer = data  # buffer_array(0x03, 0x84, 0x01, 0x4B, 0x0D)
+    n_bytes = c_byte(data_len)  # c_byte(5)
     ret, error_info = cp2112.HidSmbus_WriteRequest(dev, dev_addr, pointer(buffer), n_bytes)
     # print("5 error info:", ret, error_info)
     time.sleep(time_out * 0.001)
 
     return ret
 
+
 def aslan_pack_beacon_config():
     buffer_array = c_byte * 64
 
-
-# Beacon data
+    # Beacon data
     buf = buffer_array(0x0A,
                        0x1F, 0x86, 0x02, 0x1B, 0xFF, 0x01, 0xF1, 0xBE,
                        0xAC, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
@@ -281,17 +280,18 @@ def aslan_pack_beacon_config():
     addr_write(0x42, 0x0A, 0, buf, 34)
     time.sleep(0.1)
 
-# Tx power set
+    # Tx power set
     buf = buffer_array(0x0A,
                        0x03, 0x82, 0x01, 0x4B, 0x0D)
     addr_write(0x42, 0x0A, 0, buf, 6)
     time.sleep(0.1)
 
-# Tx rate set
+    # Tx rate set
     buf = buffer_array(0x0A,
                        0x04, 0x83, 0x00, 0x01, 0x65, 0x0D)
     addr_write(0x42, 0x0A, 0, buf, 7)
     time.sleep(0.1)
+
 
 # # beacon enable
 #     buf = buffer_array(0x0A,
@@ -305,7 +305,7 @@ def aslan_pack_beacon_config():
 #     addr_write(0x42, 0x0A, 0, buf, 6)
 
 def aslan_pack_beacon_status(status):
-    if(status is True):
+    if (status is True):
         buffer_array = c_byte * 64
         # beacon enable
         buf = buffer_array(0x0A,
@@ -321,12 +321,13 @@ def aslan_pack_beacon_status(status):
         addr_write(0x42, 0x0A, 0, buf, 6)
         print("beacon is closed")
 
+
 def aslan_pack_beacon_thermal_pin(status):
     # Set all GPIO to OUTPUT
-    #0xF0: GPIO 0:3 ->input 4:7 ->output
+    # 0xF0: GPIO 0:3 ->input 4:7 ->output
     ret, error_info = cp2112.HidSmbus_SetGpioConfig(dev, c_byte(0xF0), c_byte(0x00), c_byte(0x00), c_byte(0x00))
     # print(ret, error_info)
-    if(status is True):
+    if (status is True):
         # 0xF0: GPIO 0:3 ->low 4:4 -> high 5:7 ->low
         ret = cp2112.HidSmbus_WriteLatch(dev, c_byte(0x10), c_byte(0xFF))
         print("pin pull high, i2c cmd mode")
@@ -352,6 +353,7 @@ def enable_beacon_mode():
     time.sleep(6)
     print("-------end of ctrl----------enable\r\n\r\n")
 
+
 def disable_beacon_mode():
     aslan_pack_beacon_thermal_pin(True)
     time.sleep(6)
@@ -369,7 +371,6 @@ def disable_beacon_mode():
     print("-------end of ctrl----------disable\r\n\r\n")
 
 
-
 # dev_addr:21
 # reg_addr:0A
 #
@@ -383,57 +384,56 @@ from tkinter import *
 
 LOG_LINE_NUM = 0
 
+
 class GUI():
-    def __init__(self,init_window_name):
+    def __init__(self, init_window_name):
         self.init_window_name = init_window_name
 
-
-    #设置窗口
+    # 设置窗口
     def set_init_window(self):
-        self.init_window_name.title("蓝牙Beacon测试程序")           #窗口名
+        self.init_window_name.title("蓝牙Beacon测试程序")  # 窗口名
         self.init_window_name.geometry('1068x681+10+10')
-        #self.init_window_name["bg"] = "pink"                                    #窗口背景色，其他背景色见：blog.csdn.net/chl0000/article/details/7657887
-        #self.init_window_name.attributes("-alpha",0.9)                          #虚化，值越小虚化程度越高
-        #标签
+        # self.init_window_name["bg"] = "pink"                                    #窗口背景色，其他背景色见：blog.csdn.net/chl0000/article/details/7657887
+        # self.init_window_name.attributes("-alpha",0.9)                          #虚化，值越小虚化程度越高
+        # 标签
         self.init_data_label = Label(self.init_window_name, text="按钮按下时，如果软件闪退，说明硬件电路连接存在问题！")
         self.init_data_label.grid(row=0, column=0)
         # self.result_data_label = Label(self.init_window_name, text="输出结果")
         # self.result_data_label.grid(row=0, column=12)
         # self.log_label = Label(self.init_window_name, text="日志")
         # self.log_label.grid(row=12, column=0)
-        #按钮
+        # 按钮
         # self.str_trans_to_md5_button = Button(self.init_window_name, text="字符串转MD5", bg="lightblue", width=10,command=self.str_trans_to_md5)  # 调用内部方法  加()为直接调用
 
-        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="使能Beacon", bg="lightblue", width=50,
+        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="使能Beacon",
+                                                bg="lightblue", width=50,
                                                 height=10, command=self.enable_beacon)
         self.enable_beacon_mode_button.grid(row=10, column=10)
 
-        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="关闭Beacon", bg="lightblue", width=50,
+        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="关闭Beacon",
+                                                bg="lightblue", width=50,
                                                 height=10, command=self.disable_beacon)
         self.enable_beacon_mode_button.grid(row=100, column=10)
 
-
-    #功能函数
+    # 功能函数
     def enable_beacon(self):
         enable_beacon_mode()
+
     def disable_beacon(self):
         disable_beacon_mode()
 
-
-    #获取当前时间
+    # 获取当前时间
     def get_current_time(self):
-        current_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+        current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         return current_time
 
 
 def gui_start():
-    init_window = Tk()              # 实例化出一个父窗口
+    init_window = Tk()  # 实例化出一个父窗口
     ui = GUI(init_window)
     # 设置根窗口默认属性
     ui.set_init_window()
-    init_window.mainloop()          # 父窗口进入事件循环，可以理解为保持窗口运行，否则界面不展示
-
-
+    init_window.mainloop()  # 父窗口进入事件循环，可以理解为保持窗口运行，否则界面不展示
 
 if __name__ == '__main__':
 
@@ -459,12 +459,10 @@ if __name__ == '__main__':
 
     time.sleep(0.1)
 
+    rssi_status, rssi_val = serial_read_data_from_cc2540("209148552FC1", -70)
+    if rssi_status is True:
+        print("----rssi:%d" % rssi_val + "dB")
+    else:
+        print("test fail!")
+
     gui_start()
-
-
-
-
-
-
-
-
