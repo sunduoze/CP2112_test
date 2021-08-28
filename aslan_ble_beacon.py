@@ -81,10 +81,10 @@ def set_smbus_config(dev_x: c_void_p, speed: c_ulong, time_out: c_ushort, retry:
     transferRetries = c_ushort()
     ret, error_info = cp2112.HidSmbus_GetSmbusConfig(dev_x, bitRate, address, autoReadRespond,
                                                      writeTimeout, readTimeout, sclLowTimeout, transferRetries)
-    print("smbus config: bitRate:", bitRate.value, "address:0x%x" % address.value, "transferRetries:",
-          transferRetries.value)
+    logging.info("smbus config: bitRate:" + str(bitRate.value) + " address:" + str(hex(address.value)) +
+                 " transferRetries:" + str(transferRetries.value))
     if (ret != 0):
-        print("HidSmbus_GetSmbusConfig error info:", ret, error_info)
+        logging.info("HidSmbus_GetSmbusConfig ret:" + str(ret) + " error_info:" + str(error_info))
     return ret
 
 
@@ -436,12 +436,13 @@ class GUI():
     #设置窗口
     def set_init_window(self):
         self.init_window_name.title("蓝牙Beacon测试程序")           #窗口名
-        self.init_window_name.geometry('1068x681+10+10')
+        self.init_window_name.geometry('700x581+10+10')
         #self.init_window_name["bg"] = "pink"                                    #窗口背景色，其他背景色见：blog.csdn.net/chl0000/article/details/7657887
         #self.init_window_name.attributes("-alpha",0.9)                          #虚化，值越小虚化程度越高
         #标签
-        self.init_data_label = Label(self.init_window_name, text="按钮按下时，如果软件闪退，说明硬件电路连接存在问题！")
-        self.init_data_label.grid(row=0, column=0)
+        # self.init_data_label = Label(self.init_window_name, text="按钮按下时，如果软件闪退，说明硬件电路连接存在问题！")
+        # self.init_data_label.grid(row=0, column=0)
+
         # self.result_data_label = Label(self.init_window_name, text="输出结果")
         # self.result_data_label.grid(row=0, column=12)
         # self.log_label = Label(self.init_window_name, text="日志")
@@ -449,11 +450,11 @@ class GUI():
         #按钮
         # self.str_trans_to_md5_button = Button(self.init_window_name, text="字符串转MD5", bg="lightblue", width=10,command=self.str_trans_to_md5)  # 调用内部方法  加()为直接调用
 
-        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="使能Beacon", bg="lightblue", width=50,
+        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="使能Beacon", bg="DarkGray", width=50,
                                                 height=10, command=self.enable_beacon)
         self.enable_beacon_mode_button.grid(row=10, column=10)
 
-        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="关闭Beacon", bg="lightblue", width=50,
+        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="关闭Beacon", bg="MediumSeaGreen", width=50,
                                                 height=10, command=self.disable_beacon)
         self.enable_beacon_mode_button.grid(row=100, column=10)
 
@@ -462,6 +463,8 @@ class GUI():
     def enable_beacon(self):
         for i in range(5):
             if enable_beacon_mode() == 0:
+                # self.init_data_label = Label(self.init_window_name, text="[enable]重试次数:" + str(0))
+                # self.init_data_label.grid(row=30, column=0)
                 break
             else:
                 self.init_data_label = Label(self.init_window_name, text="[enable]重试次数:" + str(i + 1))
@@ -469,8 +472,11 @@ class GUI():
                 print("[enable]retry times:" + str(i + 1))
 
     def disable_beacon(self):
+
         for i in range(5):
             if disable_beacon_mode() == 0:
+                # self.init_data_label = Label(self.init_window_name, text="[disable]重试次数:" + str(0))
+                # self.init_data_label.grid(row=60, column=0)
                 break
             else:
                 self.init_data_label = Label(self.init_window_name, text="[disable]重试次数:" + str(i + 1))

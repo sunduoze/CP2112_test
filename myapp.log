@@ -1,4 +1,0 @@
-Sat, 28 Aug 2021 17:02:24 aslan_ble_beacon.py[line:550] ERROR cp2112 is not opened
-Sat, 28 Aug 2021 17:02:24 aslan_ble_beacon.py[line:70] WARNING set_smbus_config fail
-Sat, 28 Aug 2021 17:02:24 aslan_ble_beacon.py[line:86] INFO smbus config: bitRate:0address:0x0x0transferRetries:0
-root        : INFO     smbus config: bitRate:0address:0x0x0transferRetries:0
