@@ -1,4 +1,4 @@
-
+# -*- encoding: gb2312 -*-
 # ASLAN
 # dev_addr:21
 # reg_addr:0A
@@ -8,10 +8,11 @@
 # Tx power set  W:03 82 01 0B 0D
 # Beacon data   W:1F 86 02 1B FF 01 F1 BE AC 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF 1A EB EB EC DD C3 00 1A 0D
 
-
+import logging
 from ctypes import *
 from slab_hid_to_smbus import hid_smbus
 import time
+
 
 # try:
 cp2112 = hid_smbus()
@@ -21,7 +22,6 @@ cp2112_pid = c_ushort(0xEA90)
 #     print("[!!! error]", e)
 
 dev = c_void_p()
-
 
 def cp2112_gpio_test(dev):
     # Set all GPIO to OUTPUT
@@ -67,7 +67,9 @@ def set_smbus_config(dev_x: c_void_p, speed: c_ulong, time_out: c_ushort, retry:
                                                      time_out, time_out, c_bool(False),
                                                      retry)  # send retry-send times = 3
     if (ret != 0):
+        logging.warning("set_smbus_config fail")
         print("config error info:", ret, error_info)
+
 
     # get smbus config
     bitRate = c_ulong()
@@ -219,30 +221,42 @@ def reg_addr_read_and_read_auto_response(dev_addr: c_byte, reg_addr_len: c_byte,
 
 
 def get_status(dev: c_void_p):
-    print("-------------get_status--")
+    return_status = False
+    logging.debug("-------------get_status--")
     ret, error_info = cp2112.HidSmbus_TransferStatusRequest(dev)
-    print("7 error info:", ret, error_info)
 
-    status = c_byte()
-    detail_status = c_byte()
-    buffer_array = c_byte * 16
-    buffer = buffer_array()
-    num_retrys = c_ushort()
-    bytes_read = c_ushort()
-    ret, error_info = cp2112.HidSmbus_GetTransferStatusResponse(dev, status, detail_status, num_retrys, bytes_read)
-    # print("A error info:", ret, error_info)
-    print(status.value, cp2112.status_return_Code[status.value])
-    if status.value == 0x01:  # HID_SMBUS_S0_BUSY
-        print(detail_status.value, cp2112.HID_SMBUS_S0_BUSY[detail_status.value])
-    elif status.value == 0x03:  # HID_SMBUS_S0_ERROR
-        print(detail_status.value, cp2112.HID_SMBUS_S0_ERROR[detail_status.value])
-    # else:
-    #     print(detail_status.value)
+    if ret == 0:
+        status = c_byte()
+        detail_status = c_byte()
+        buffer_array = c_byte * 16
+        buffer = buffer_array()
+        num_retrys = c_ushort()
+        bytes_read = c_ushort()
+        ret, error_info = cp2112.HidSmbus_GetTransferStatusResponse(dev, status, detail_status, num_retrys, bytes_read)
+        # print("A error info:", ret, error_info)
 
-    print("num_retrys", num_retrys.value)
-    print("bytes_read", bytes_read.value)
-    print("-------end of get_status----------")
-    return ret, error_info
+        if status.value == 0x01 or status.value == 0x03:  # display error info
+            logging.error(str(status.value) + " " + str(cp2112.status_return_Code[status.value]))
+            if status.value == 0x01:  # HID_SMBUS_S0_BUSY
+                logging.warning(str(detail_status.value) + " " + str(cp2112.HID_SMBUS_S0_BUSY[detail_status.value]))
+            elif status.value == 0x03:  # HID_SMBUS_S0_ERROR
+                logging.warning(str(detail_status.value) + " " + str(cp2112.HID_SMBUS_S0_ERROR[detail_status.value]))
+            logging.debug("num_retrys" + str(num_retrys.value))
+            logging.debug("bytes_read" + str(bytes_read.value))
+            # print("num_retrys", num_retrys.value)
+            # print("bytes_read", bytes_read.value)
+        elif status.value == 0x00:  # HID_SMBUS_S0_IDLE
+            logging.info("HID_SMBUS_S0_IDLE" + str(detail_status.value))
+            return_status = True
+        else:  # HID_SMBUS_S0_COMPLETE
+            return_status = True
+            # print(detail_status.value)
+        logging.debug("-------end of get_status----------")
+        logging.debug('This is debug message')
+    else:
+        logging.error("HidSmbus_TransferStatusRequest FAIL:" + "ret:" + str(ret,) + "error info:" + str(error_info))
+    # print("7 get_status:error info:", return_status)
+    return return_status
 
 
 
@@ -265,9 +279,10 @@ def addr_write(dev_addr, reg_addr, reg_addr_len, data, data_len):
     # print("5 error info:", ret, error_info)
     time.sleep(time_out * 0.001)
 
-    return ret
+    return get_status(dev)
 
 def aslan_pack_beacon_config():
+    ret = 0
     buffer_array = c_byte * 64
 
 
@@ -278,19 +293,22 @@ def aslan_pack_beacon_config():
                        0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
                        0x1A, 0xEB, 0xEB, 0xEC, 0xDD, 0xC3, 0x00, 0x1A,
                        0x0D)
-    addr_write(0x42, 0x0A, 0, buf, 34)
+    if addr_write(0x42, 0x00, 0, buf, 34) is False:
+        ret = ret + 1
     time.sleep(0.1)
 
 # Tx power set
     buf = buffer_array(0x0A,
                        0x03, 0x82, 0x01, 0x4B, 0x0D)
-    addr_write(0x42, 0x0A, 0, buf, 6)
+    if addr_write(0x42, 0x00, 0, buf, 6) is False:
+        ret = ret + 1
     time.sleep(0.1)
 
 # Tx rate set
     buf = buffer_array(0x0A,
                        0x04, 0x83, 0x00, 0x01, 0x65, 0x0D)
-    addr_write(0x42, 0x0A, 0, buf, 7)
+    if addr_write(0x42, 0x00, 0, buf, 7) is False:
+        ret = ret + 1
     time.sleep(0.1)
 
 # # beacon enable
@@ -303,23 +321,30 @@ def aslan_pack_beacon_config():
 #     buf = buffer_array(0x0A,
 #                        0x03, 0x84, 0x00, 0x02, 0x0D)
 #     addr_write(0x42, 0x0A, 0, buf, 6)
+    return ret
 
 def aslan_pack_beacon_status(status):
+    ret = 0
     if(status is True):
         buffer_array = c_byte * 64
         # beacon enable
         buf = buffer_array(0x0A,
                            0x03, 0x84, 0x01, 0x4B, 0x0D)
-        addr_write(0x42, 0x0A, 0, buf, 6)
+        if addr_write(0x42, 0x00, 0, buf, 6) is False:
+            ret = ret + 1
         time.sleep(0.1)
-        print("beacon is opened")
+        # print("beacon is opened")
+        logging.info("beacon is opened")
     else:
         buffer_array = c_byte * 64
         # beacon disable
         buf = buffer_array(0x0A,
                            0x03, 0x84, 0x00, 0x02, 0x0D)
-        addr_write(0x42, 0x0A, 0, buf, 6)
-        print("beacon is closed")
+        if addr_write(0x42, 0x00, 0, buf, 6) is False:
+            ret = ret + 1
+        # print("beacon is closed")
+        logging.info("beacon is closed")
+    return ret
 
 def aslan_pack_beacon_thermal_pin(status):
     # Set all GPIO to OUTPUT
@@ -329,46 +354,67 @@ def aslan_pack_beacon_thermal_pin(status):
     if(status is True):
         # 0xF0: GPIO 0:3 ->low 4:4 -> high 5:7 ->low
         ret = cp2112.HidSmbus_WriteLatch(dev, c_byte(0x10), c_byte(0xFF))
-        print("pin pull high, i2c cmd mode")
+        # print("pin pull high, i2c cmd mode")
+        logging.info("pin pull high, i2c cmd mode")
     else:
         ret = cp2112.HidSmbus_WriteLatch(dev, c_byte(0x00), c_byte(0xFF))
-        print("default(internel pull down 100k), beacon boardcast mode")
+        # print("default(internel pull down 100k), beacon boardcast mode")
+        logging.info("default(internel pull down 100k), beacon boardcast mode")
     return ret, error_info
 
 
 def enable_beacon_mode():
+    ret = 0
     aslan_pack_beacon_thermal_pin(True)
     time.sleep(6)
-    aslan_pack_beacon_config()
-    time.sleep(1)
+    if aslan_pack_beacon_config() == 0:
+        time.sleep(1)
+        #### enable
+        if aslan_pack_beacon_status(True) != 0:
+            ret = ret + 1
+            print("\r\nbreak\r\n")
+            aslan_pack_beacon_thermal_pin(False)
+            logging.error("enable fail\r\n\r\n")
+            return ret
+        #### disable
+        # aslan_pack_beacon_status(False)
 
-    #### enable
-    aslan_pack_beacon_status(True)
-    #### disable
-    # aslan_pack_beacon_status(False)
-
-    time.sleep(0.1)
-    aslan_pack_beacon_thermal_pin(False)
-    time.sleep(6)
-    print("-------end of ctrl----------enable\r\n\r\n")
+        time.sleep(0.1)
+        aslan_pack_beacon_thermal_pin(False)
+        time.sleep(6)
+        logging.info("-------end of ctrl----------enable\r\n\r\n")
+    else:
+        ret = ret + 1
+        aslan_pack_beacon_thermal_pin(False)
+        logging.error("enable fail\r\n\r\n")
+    # print("-------end of ctrl----------enable\r\n\r\n")
+    return ret
 
 def disable_beacon_mode():
+    ret = 0
     aslan_pack_beacon_thermal_pin(True)
     time.sleep(6)
-    aslan_pack_beacon_config()
-    time.sleep(0.1)
+    if aslan_pack_beacon_config() == 0:
+        time.sleep(0.1)
 
-    #### enable
-    # aslan_pack_beacon_status(True)
-    #### disable
-    aslan_pack_beacon_status(False)
-
-    time.sleep(1)
-    aslan_pack_beacon_thermal_pin(False)
-    time.sleep(1)
-    print("-------end of ctrl----------disable\r\n\r\n")
-
-
+        #### enable
+        # aslan_pack_beacon_status(True)
+        #### disable
+        if aslan_pack_beacon_status(False) != 0:
+            ret = ret + 1
+            print("\r\nbreak\r\n")
+            aslan_pack_beacon_thermal_pin(False)
+            logging.error("disable fail\r\n\r\n")
+            return ret
+        time.sleep(1)
+        aslan_pack_beacon_thermal_pin(False)
+        time.sleep(1)
+        logging.info("-------end of ctrl----------disable\r\n\r\n")
+    else:
+        ret = ret + 1
+        aslan_pack_beacon_thermal_pin(False)
+        logging.error("disable fail\r\n\r\n")
+    return ret
 
 # dev_addr:21
 # reg_addr:0A
@@ -387,60 +433,106 @@ class GUI():
     def __init__(self,init_window_name):
         self.init_window_name = init_window_name
 
-
-    #è®¾ç½®çª—å£
+    #ÉèÖÃ´°¿Ú
     def set_init_window(self):
-        self.init_window_name.title("è“ç‰™Beaconæµ‹è¯•ç¨‹åº")           #çª—å£å
+        self.init_window_name.title("À¶ÑÀBeacon²âÊÔ³ÌĞò")           #´°¿ÚÃû
         self.init_window_name.geometry('1068x681+10+10')
-        #self.init_window_name["bg"] = "pink"                                    #çª—å£èƒŒæ™¯è‰²ï¼Œå…¶ä»–èƒŒæ™¯è‰²è§ï¼šblog.csdn.net/chl0000/article/details/7657887
-        #self.init_window_name.attributes("-alpha",0.9)                          #è™šåŒ–ï¼Œå€¼è¶Šå°è™šåŒ–ç¨‹åº¦è¶Šé«˜
-        #æ ‡ç­¾
-        self.init_data_label = Label(self.init_window_name, text="æŒ‰é’®æŒ‰ä¸‹æ—¶ï¼Œå¦‚æœè½¯ä»¶é—ªé€€ï¼Œè¯´æ˜ç¡¬ä»¶ç”µè·¯è¿æ¥å­˜åœ¨é—®é¢˜ï¼")
+        #self.init_window_name["bg"] = "pink"                                    #´°¿Ú±³¾°É«£¬ÆäËû±³¾°É«¼û£ºblog.csdn.net/chl0000/article/details/7657887
+        #self.init_window_name.attributes("-alpha",0.9)                          #Ğé»¯£¬ÖµÔ½Ğ¡Ğé»¯³Ì¶ÈÔ½¸ß
+        #±êÇ©
+        self.init_data_label = Label(self.init_window_name, text="°´Å¥°´ÏÂÊ±£¬Èç¹ûÈí¼şÉÁÍË£¬ËµÃ÷Ó²¼şµçÂ·Á¬½Ó´æÔÚÎÊÌâ£¡")
         self.init_data_label.grid(row=0, column=0)
-        # self.result_data_label = Label(self.init_window_name, text="è¾“å‡ºç»“æœ")
+        # self.result_data_label = Label(self.init_window_name, text="Êä³ö½á¹û")
         # self.result_data_label.grid(row=0, column=12)
-        # self.log_label = Label(self.init_window_name, text="æ—¥å¿—")
+        # self.log_label = Label(self.init_window_name, text="ÈÕÖ¾")
         # self.log_label.grid(row=12, column=0)
-        #æŒ‰é’®
-        # self.str_trans_to_md5_button = Button(self.init_window_name, text="å­—ç¬¦ä¸²è½¬MD5", bg="lightblue", width=10,command=self.str_trans_to_md5)  # è°ƒç”¨å†…éƒ¨æ–¹æ³•  åŠ ()ä¸ºç›´æ¥è°ƒç”¨
+        #°´Å¥
+        # self.str_trans_to_md5_button = Button(self.init_window_name, text="×Ö·û´®×ªMD5", bg="lightblue", width=10,command=self.str_trans_to_md5)  # µ÷ÓÃÄÚ²¿·½·¨  ¼Ó()ÎªÖ±½Óµ÷ÓÃ
 
-        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="ä½¿èƒ½Beacon", bg="lightblue", width=50,
+        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="Ê¹ÄÜBeacon", bg="lightblue", width=50,
                                                 height=10, command=self.enable_beacon)
         self.enable_beacon_mode_button.grid(row=10, column=10)
 
-        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="å…³é—­Beacon", bg="lightblue", width=50,
+        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="¹Ø±ÕBeacon", bg="lightblue", width=50,
                                                 height=10, command=self.disable_beacon)
         self.enable_beacon_mode_button.grid(row=100, column=10)
 
 
-    #åŠŸèƒ½å‡½æ•°
+    #¹¦ÄÜº¯Êı
     def enable_beacon(self):
-        enable_beacon_mode()
+        for i in range(5):
+            if enable_beacon_mode() == 0:
+                break
+            else:
+                self.init_data_label = Label(self.init_window_name, text="[enable]ÖØÊÔ´ÎÊı:" + str(i + 1))
+                self.init_data_label.grid(row=30, column=0)
+                print("[enable]retry times:" + str(i + 1))
+
     def disable_beacon(self):
-        disable_beacon_mode()
-
-
-    #è·å–å½“å‰æ—¶é—´
+        for i in range(5):
+            if disable_beacon_mode() == 0:
+                break
+            else:
+                self.init_data_label = Label(self.init_window_name, text="[disable]ÖØÊÔ´ÎÊı:" + str(i + 1))
+                self.init_data_label.grid(row=60, column=0)
+                print("[disable]retry times:" + str(i + 1))
+    #»ñÈ¡µ±Ç°Ê±¼ä
     def get_current_time(self):
         current_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
         return current_time
 
 
 def gui_start():
-    init_window = Tk()              # å®ä¾‹åŒ–å‡ºä¸€ä¸ªçˆ¶çª—å£
+    init_window = Tk()              # ÊµÀı»¯³öÒ»¸ö¸¸´°¿Ú
     ui = GUI(init_window)
-    # è®¾ç½®æ ¹çª—å£é»˜è®¤å±æ€§
+    # ÉèÖÃ¸ù´°¿ÚÄ¬ÈÏÊôĞÔ
     ui.set_init_window()
-    init_window.mainloop()          # çˆ¶çª—å£è¿›å…¥äº‹ä»¶å¾ªç¯ï¼Œå¯ä»¥ç†è§£ä¸ºä¿æŒçª—å£è¿è¡Œï¼Œå¦åˆ™ç•Œé¢ä¸å±•ç¤º
+    init_window.mainloop()          # ¸¸´°¿Ú½øÈëÊÂ¼şÑ­»·£¬¿ÉÒÔÀí½âÎª±£³Ö´°¿ÚÔËĞĞ£¬·ñÔò½çÃæ²»Õ¹Ê¾
+
+
+
+def log_init():
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                        datefmt='%a, %d %b %Y %H:%M:%S',
+                        filename='myapp.log',
+                        filemode='w')
+
+
+    from logging.handlers import RotatingFileHandler
+
+    #################################################################################################
+    # ¶¨ÒåÒ»¸öRotatingFileHandler£¬×î¶à±¸·İ5¸öÈÕÖ¾ÎÄ¼ş£¬Ã¿¸öÈÕÖ¾ÎÄ¼ş×î´ó10M
+    Rthandler = RotatingFileHandler('myapp.log', maxBytes=10 * 1024 * 1024, backupCount=5)
+    Rthandler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    Rthandler.setFormatter(formatter)
+    logging.getLogger('').addHandler(Rthandler)
+    ################################################################################################
+
+    #################################################################################################
+    # ¶¨ÒåÒ»¸öStreamHandler£¬½«INFO¼¶±ğ»ò¸ü¸ßµÄÈÕÖ¾ĞÅÏ¢´òÓ¡µ½±ê×¼´íÎó£¬²¢½«ÆäÌí¼Óµ½µ±Ç°µÄÈÕÖ¾´¦Àí¶ÔÏó#
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
+    #################################################################################################
+
+    # logging.debug('This is debug message')
+    # logging.info('This is info message')
+    # logging.warning('This is warning message')
 
 
 
 if __name__ == '__main__':
+    log_init()
 
     # 1. judge cp2112 dev status & get num Devices
     numDevices = c_ulong()
     cp2112.HidSmbus_GetNumDevices(numDevices, cp2112_vid, cp2112_pid)
     if numDevices.value != 1:
+        logging.error("ERROR: No Device Connected or device over 1")
         print("ERROR: No Device Connected or device over 1, dev_num:", numDevices.value)
         exit()
 
@@ -449,10 +541,11 @@ if __name__ == '__main__':
     ret, error_info = cp2112.HidSmbus_Open(dev, c_ulong(numDevices.value - 1), cp2112_vid, cp2112_pid)
     cp2112.HidSmbus_IsOpened(dev, is_opened)
     if is_opened.value:
-        print("cp2112 is opened")
+        # print("cp2112 is opened")
+        logging.debug("cp2112 is opened")
     else:
-        print("cp2112 is not opened")
-
+        # print("cp2112 is not opened")
+        logging.error("cp2112 is not opened")
     # 3. set smbus configuration
     time_out = 100  # ms
     set_smbus_config(dev, c_ulong(33000), c_ushort(time_out), c_ushort(3))
