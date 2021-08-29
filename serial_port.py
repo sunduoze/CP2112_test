@@ -1,3 +1,4 @@
+# -*- mode: python ; coding: utf-8 -*-
 import sys
 import threading
 import datetime
@@ -102,6 +103,7 @@ def open_seri(port_x, bps, timeout):
         if serial_port.is_open:
             ret_val = True
             th = threading.Thread(args=(serial_port,), target=read_data)  # 创建一个子线程去等待读数据
+            th.setDaemon(True)  # 守护线程
             th.start()
     except Exception as e:
         print("error! can not open serial port", e)
@@ -119,7 +121,6 @@ def write_to_seri(ser, text):
     res = ser.write(text.encode("gbk"))  # 写
     return res
 
-
 # 读数据
 def read_from_seri():
     global DATA
@@ -127,54 +128,41 @@ def read_from_seri():
     DATA = ""  # 清空当次读取
     return data
 
-def serial_read_data_from_cc2540(ble_mac_addr, rssi_down_limit):
+def serial_read_data_from_cc2540(rssi_down_limit, retry_times, time_out):
     global DATA
-    mac_addr_set_status = False
     scan_status = False
     rssi_status = False
     rssi_val = 0
 
-    ser, ret = list_and_bind('Prolific USB-to-Serial Comm Port', 115200, 100)
-    for i in range(2):
-        write_to_seri(ser, "set_addr:" + ble_mac_addr + "\r\n")
-        time.sleep(0.1)
-        mac_addr = "0x" + ble_mac_addr
-        if re.match(mac_addr, DATA) is not None:
-            mac_addr_set_status = True
-            print("mac addr:" + mac_addr)
+    # ser, ret = list_and_bind('Prolific USB-to-Serial Comm Port', 115200, 100)
+    ser, ret = list_and_bind('Silicon Labs CP210x USB to UART Bridge', 115200, 100)
+    for i in range(retry_times):
+        write_to_seri(ser, "scan_beacon\r\n")
+        time.sleep(time_out)
+        if re.match('scaned', DATA) is not None:
+            DATA = ""
+            print("scaned")
+            scan_status = True
             break
 
-    if mac_addr_set_status is True:
-
-        for i in range(10):
-            write_to_seri(ser, "scan_beacon\r\n")
+    if scan_status is True:
+        for i in range(3):
+            write_to_seri(ser, "get_rssi\r\n")
             time.sleep(0.1)
-            if re.match('scaned', DATA) is not None:
+            if re.match(r'rssi', DATA) != None:
+                rssi_x = re.search(r'\d{1,2}', DATA)
                 DATA = ""
-                print("scaned")
-                scan_status = True
-                break
-
-        if scan_status is True:
-            for i in range(3):
-                write_to_seri(ser, "get_rssi\r\n")
-                time.sleep(0.1)
-                if re.match(r'rssi', DATA) != None:
-                    rssi_x = re.search(r'\d{1,2}', DATA)
-                    DATA = ""
-                    rssi_val = int(rssi_x.group()) - 100
-                    if(rssi_val > rssi_down_limit):
-                        rssi_status = True
-                        print("rssi:%d" % rssi_val + "dB")
-                        break
-                    else:
-                        print("rssi too low,rssi:%d" % rssi_val + "dB")
-            if rssi_status is not True:
-                print("rssi:%d" % rssi_val + "dB")
-        else:
-            print("scan_beacon error,data:" + DATA)
+                rssi_val = int(rssi_x.group()) - 100
+                if(rssi_val > rssi_down_limit):
+                    rssi_status = True
+                    print("rssi:%d" % rssi_val + "dB")
+                    break
+                else:
+                    print("rssi too low,rssi:%d" % rssi_val + "dB")
+        if rssi_status is not True:
+            print("rssi:%d" % rssi_val + "dB")
     else:
-        print("mac addr set error,data:" + DATA)
+        print("scan_beacon error,data:" + DATA)
 
     close_seri(ser)
     return rssi_status, rssi_val
@@ -182,7 +170,7 @@ def serial_read_data_from_cc2540(ble_mac_addr, rssi_down_limit):
 
 if __name__ == "__main__":
 
-    rssi_status, rssi_val = serial_read_data_from_cc2540("209148552FC1", -70)
+    rssi_status, rssi_val = serial_read_data_from_cc2540(-40, 10, 0.1)
     if rssi_status is True:
         print("----rssi:%d" % rssi_val + "dB")
     else:
