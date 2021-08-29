@@ -90,25 +90,26 @@ class GUI():
     def set_init_window(self):
 
         self.init_win_name.title("蓝牙Beacon测试程序")  # 窗口名
-        self.init_win_name.geometry('790x560+10+10')
+        self.init_win_name.geometry('790x566+10+10')
         # self.init_window_name["bg"] = "pink"                                    #窗口背景色，
         # 其他背景色见：blog.csdn.net/chl0000/article/details/7657887
         # self.init_window_name.attributes("-alpha",0.9)                          #虚化，值越小虚化程度越高
 
         # 下拉菜单
-        comvalue = tkinter.StringVar()  # 窗体自带的文本，新建一个值
-        self.comboxlist = ttk.Combobox(self.init_win_name, font=self.ft1, textvariable=comvalue, width=24)
+        # comvalue = tkinter.StringVar()  # 窗体自带的文本，新建一个值
+        self.comboxlist = ttk.Combobox(self.init_win_name, font=self.ft1, width=24)
         self.comboxlist["values"] = ("COM1", "COM2")
         self.comboxlist.current(0)  # 选择第一个
         self.comboxlist.bind("<<ComboboxSelected>>", self.scan_beacon())  # 绑定事件,(下拉列表框被选中时，绑定go()函数)
         self.comboxlist.grid(row=self.start_row+1, column=0, columnspan=3)
 
-        com_val2 = tkinter.StringVar()  # 窗体自带的文本，新建一个值
-        self.baud_cbx = ttk.Combobox(self.init_win_name, font=self.ft1, textvariable=com_val2, width=8)
+        self.baud_cbx = ttk.Combobox(self.init_win_name, font=self.ft1, width=8)
         self.baud_cbx["values"] = ("9600", "38400", "57600", "115200", "230400", "500000", "1000000")
-        self.baud_cbx.current(0)  # 选择第一个
+        self.baud_cbx.current(3)  # 选择第一个
         self.baud_cbx.bind("<<ComboboxSelected>>", self.scan_beacon())  # 绑定事件,(下拉列表框被选中时，绑定go()函数)
         self.baud_cbx.grid(row=self.start_row+4, column=2, columnspan=3, sticky='w')
+        # get()获取选中的值
+
 
         # 标签
         self.timer_send_freq_label = Label(self.init_win_name, text="ms/次")
@@ -120,6 +121,11 @@ class GUI():
 
         self.check4_label = Label(self.init_win_name, text="校验方式:")
         self.check4_label.grid(row=self.start_row + 2, column=6, sticky='w')
+
+        self.send_cnt_label = Label(self.init_win_name, text="发送个数:")
+        self.send_cnt_label.grid(row=self.start_row + 5, column=0)
+        self.recv_cnt_label = Label(self.init_win_name, text="接收个数:")
+        self.recv_cnt_label.grid(row=self.start_row + 6, column=0)
         # 按钮
         # #################### row 0 ######################
         self.clear_get_bt = Button(self.init_win_name, font=self.ft1, text="清除窗口",
@@ -199,9 +205,9 @@ class GUI():
         self.dev_connect_info_text = Text(self.init_win_name, width=50, height=1)
         self.dev_connect_info_text.grid(row=self.start_row + 9, column=0, columnspan=5, sticky='w')
         self.dev_connect_info_text.insert('0.0', 'COM12 已关闭 115200bps,8,1,None,None')
-        self.other_info_text = Text(self.init_win_name, width=30, height=1)
-        self.other_info_text.grid(row=self.start_row + 9, column=6, columnspan=3, sticky='w')
-        self.other_info_text.insert('0.0', '0')
+        # self.other_info_text = Text(self.init_win_name, width=30, height=1)
+        # self.other_info_text.grid(row=self.start_row + 9, column=8, columnspan=3, sticky='w')
+        # self.other_info_text.insert('0.0', '0')
 
         # 复选框
         # #################### row 0 ######################
