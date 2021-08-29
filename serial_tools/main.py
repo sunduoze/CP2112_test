@@ -1,19 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
-# -*- encoding: gb2312 -*-
 import logging
-from ctypes import *
 import time
-from tkinter import ttk
+
 import tkinter.font as tkFont
-from tkinter.scrolledtext import ScrolledText
-
-from serial_port import serial_read_data_from_cc2540
-
 from tkinter import *
-import tkinter.messagebox  # 弹窗库
-
-LOG_LINE_NUM = 0
-
+from tkinter import ttk
+from tkinter.scrolledtext import ScrolledText
 
 class GUI():
     def __init__(self, init_win_name):
@@ -297,10 +289,10 @@ class GUI():
     def scan_beacon(self):
         print("test fail!")
 
-    # 获取当前时间
-    def get_current_time(self):
-        current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-        return current_time
+    # # 获取当前时间
+    # def get_current_time(self):
+    #     current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+    #     return current_time
 
 
 def gui_start():
@@ -316,14 +308,14 @@ def log_init():
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
                         datefmt='%a, %d %b %Y %H:%M:%S',
-                        filename='myapp.log',
+                        filename='main.py.log',
                         filemode='w')
 
     from logging.handlers import RotatingFileHandler
 
     #################################################################################################
     # 定义一个RotatingFileHandler，最多备份5个日志文件，每个日志文件最大1M
-    Rthandler = RotatingFileHandler('app.log', maxBytes=1 * 1024 * 1024, backupCount=5)
+    Rthandler = RotatingFileHandler('main.py.log', maxBytes=1 * 1024 * 1024, backupCount=5)
     Rthandler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     Rthandler.setFormatter(formatter)
@@ -339,10 +331,9 @@ def log_init():
     logging.getLogger('').addHandler(console)
     #################################################################################################
 
-    # logging.debug('This is debug message')
-    # logging.info('This is info message')
-    # logging.warning('This is warning message')
-
+    logging.debug('This is debug message')
+    logging.info('This is info message')
+    logging.warning('This is warning message')
 
 if __name__ == '__main__':
     log_init()
