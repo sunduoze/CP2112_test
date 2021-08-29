@@ -28,62 +28,92 @@ class GUI():
 
     def init_menu(self):
         # 菜单
-        self.menu0 = Menu(self.init_win_name, font=self.ft1, tearoff=0)  # 1的话多了一个虚线，如果点击的话就会发现，这个菜单框可以独立出来显示
-        self.menu0.add_command(label="通讯端口")
-        self.menu0.add_separator()
-        self.menu0.add_command(label="串口设置")
-        self.menu0.add_separator()
-        self.menu0.add_command(label="显示")
-        self.menu0.add_separator()
-        self.menu0.add_command(label="发送")
-        self.menu0.add_separator()
-        self.menu0.add_command(label="多字符串")
-        self.menu0.add_separator()
-        self.menu0.add_command(label="小工具")
-        self.menu0.add_separator()
-        self.menu0.add_command(label="帮助")
+        self.com_port_val = IntVar()
+        self.com_port_val.set(2)
+        self.com_port_mn = Menu(self.init_win_name, font=self.ft3, tearoff=0)
+        self.com_port_mn.add_command(label="刷新串口列表")
+        self.com_port_mn.add_separator()
+        self.com_port_mn.add_command(label="TCP Cilent")
+        self.com_port_mn.add_command(label="TCP Server")
+        self.com_port_mn.add_command(label="UDP")
+        self.com_port_mn.add_separator()
+        self.com_port_mn.add_radiobutton(label="COM1", variable=self.com_port_val, value=1)
+        self.com_port_mn.add_radiobutton(label="COM2", variable=self.com_port_val, value=2)
 
-        self.menu_setting = Menu(self.init_win_name, font=self.ft2, tearoff=0)  # 1的话多了一个虚线，如果点击的话就会发现，这个菜单框可以独立出来显示
-        self.menu_setting.add_cascade(label="通讯端口", menu=self.menu0)
-        self.menu_setting.add_command(label="第二个")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="串口设置")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="显示")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="发送")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="多字符串")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="小工具")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="帮助")
+        self.com_setting_mn = Menu(self.init_win_name, font=self.ft3, tearoff=0)
+        self.com_setting_mn.add_command(label="打开串口设置")
+        self.com_setting_mn.add_separator()
+        self.com_setting_mn.add_checkbutton(label="启动立即打开串口")
+        self.com_setting_mn.add_separator()
+        self.com_setting_mn.add_command(label="帮助")
 
-        self.menu_setting = Menu(self.init_win_name, font=self.ft3, tearoff=0)  # 1的话多了一个虚线，如果点击的话就会发现，这个菜单框可以独立出来显示
-        self.menu_setting.add_cascade(label="通讯端口", menu=self.menu0)
-        self.menu_setting.add_command(label="第二个")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="串口设置")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="显示")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="发送")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="多字符串")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="小工具")
-        self.menu_setting.add_separator()
-        self.menu_setting.add_command(label="帮助")
+        self.disp_buff_size_val = IntVar()
+        self.disp_buff_size_val.set(1000000)
+        self.disp_buff_size = Menu(self.init_win_name, font=self.ft3, tearoff=0)
+        self.disp_buff_size.add_radiobutton(label="200k", variable=self.disp_buff_size_val, value=200000)
+        self.disp_buff_size.add_radiobutton(label="500k", variable=self.disp_buff_size_val, value=500000)
+        self.disp_buff_size.add_radiobutton(label="1M", variable=self.disp_buff_size_val, value=1000000)
+        self.disp_buff_size.add_radiobutton(label="2M", variable=self.disp_buff_size_val, value=2000000)
+        self.disp_buff_size.add_radiobutton(label="5M", variable=self.disp_buff_size_val, value=5000000)
+
+        self.disp_mn = Menu(self.init_win_name, font=self.ft3, tearoff=0)
+        self.disp_mn.add_command(label="字体")
+        self.disp_mn.add_command(label="背景")
+        self.disp_mn.add_separator()
+        self.disp_mn.add_cascade(label="显示缓冲上限", menu=self.disp_buff_size)
+        self.disp_mn.add_separator()
+        self.disp_mn.add_command(label="帮助")
+
+
+        self.terminal_sim_set_val = IntVar()
+        self.terminal_sim_set_val.set(2)
+        self.terminal_sim_set_mn = Menu(self.init_win_name, font=self.ft3, tearoff=0)
+        self.terminal_sim_set_mn.add_radiobutton(label="回车后发送输入行(带回显)",
+                                                 variable=self.terminal_sim_set_val, value=1)
+        self.terminal_sim_set_mn.add_separator()
+        self.terminal_sim_set_mn.add_radiobutton(label="按键立即发送该键值", variable=self.terminal_sim_set_val, value=2)
+        self.terminal_sim_set_mn.add_checkbutton(label="本地回显按键值")
+        self.terminal_sim_set_mn.add_separator()
+        self.terminal_sim_set_mn.add_checkbutton(label="发送回车0x0D后，自动加上换行符0x0A")
+
+        self.send_file_delay_val = IntVar()
+        self.send_file_delay_val.set(0)
+        self.send_file_delay_mn = Menu(self.init_win_name, font=self.ft3, tearoff=0)
+        self.send_file_delay_mn.add_radiobutton(label="连续发送",
+                                                variable=self.send_file_delay_val, value=0)
+        self.send_file_delay_mn.add_radiobutton(label="每发送256字节延时1ms",
+                                                variable=self.send_file_delay_val, value=1)
+        self.send_file_delay_mn.add_radiobutton(label="每发送256字节延时10ms",
+                                                variable=self.send_file_delay_val, value=10)
+        self.send_file_delay_mn.add_radiobutton(label="每发送256字节延时50ms",
+                                                variable=self.send_file_delay_val, value=50)
+        self.send_file_delay_mn.add_radiobutton(label="每发送256字节延时100ms",
+                                                variable=self.send_file_delay_val, value=100)
+
+        self.send_config_mn = Menu(self.init_win_name, font=self.ft3, tearoff=0)
+        # 1的话多了一个虚线，如果点击的话就会发现，这个菜单框可以独立出来显示
+        self.send_config_mn.add_cascade(label="终端仿真设置", menu=self.terminal_sim_set_mn)
+        self.send_config_mn.add_separator()
+        self.send_config_mn.add_cascade(label="发送文件延时设置", menu=self.send_file_delay_mn)
+        self.send_config_mn.add_separator()
+        self.send_config_mn.add_command(label="帮助")
+
+        self.tools_mn = Menu(self.init_win_name, font=self.ft3, tearoff=0)
+        self.tools_mn.add_command(label="数据波形(示波器)")
+        self.tools_mn.add_command(label="STM/GD32 ISP 烧写器")
+        self.tools_mn.add_command(label="STC/IAP15 ISP 烧写器")
+        self.tools_mn.add_command(label="转换计算器")
+        self.tools_mn.add_command(label="lua脚本")
+
 
         self.menu_bar = Menu(self.init_win_name)
-        self.menu_bar.add_cascade(label="通讯端口", menu=self.menu_setting)
-        self.menu_bar.add_cascade(label="串口设置", menu=self.menu_setting)  # 原理：先在主菜单中添加一个菜单，与之前创建的菜单进行绑定。
-        self.menu_bar.add_cascade(label="显示", menu=self.menu_setting)
-        self.menu_bar.add_cascade(label="发送", menu=self.menu_setting)
-        self.menu_bar.add_cascade(label="多字符串", menu=self.menu_setting)
-        self.menu_bar.add_cascade(label="小工具", menu=self.menu_setting)
-        # self.menu_bar.add_cascade(label="帮助", menu=self.menu_help)
-        self.menu_bar.add_command(label="退出", command=self.init_win_name.quit)
+        self.menu_bar.add_cascade(label="通讯端口", menu=self.com_port_mn)
+        self.menu_bar.add_cascade(label="串口设置", menu=self.com_setting_mn)
+        self.menu_bar.add_cascade(label="显示", menu=self.disp_mn)
+        self.menu_bar.add_cascade(label="发送", menu=self.send_config_mn)
+        self.menu_bar.add_cascade(label="多字符串")
+        self.menu_bar.add_cascade(label="小工具", menu=self.tools_mn)
+        self.menu_bar.add_command(label="帮助", command=self.init_win_name.quit)
         self.init_win_name.config(menu=self.menu_bar)
 
     # 设置窗口
@@ -116,7 +146,7 @@ class GUI():
         self.timer_send_freq_label\
             .grid(row=self.start_row+1, column=9, sticky='e')
 
-        self.timeout_label = Label(self.init_win_name, text="ms 超时")
+        self.timeout_label = Label(self.init_win_name, text="ms 超时时间")
         self.timeout_label.grid(row=self.start_row + 2, column=5, sticky='w')
 
         self.check4_label = Label(self.init_win_name, text="校验方式:")
