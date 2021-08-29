@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # -*- mode: python ; coding: utf-8 -*-
+=======
+# -*- encoding: gb2312 -*-
+>>>>>>> debug_aslan_en_beacon
 # ASLAN
 # dev_addr:21
 # reg_addr:0A
@@ -13,6 +17,7 @@ from ctypes import *
 from slab_hid_to_smbus import hid_smbus
 import time
 from serial_port import serial_read_data_from_cc2540
+
 
 # try:
 cp2112 = hid_smbus()
@@ -434,6 +439,7 @@ class GUI():
     def __init__(self,init_window_name):
         self.init_window_name = init_window_name
 
+<<<<<<< HEAD
     #è®¾ç½®çª—å£
     def set_init_window(self):
         self.init_window_name.title("è“ç‰™Beaconæµ‹è¯•ç¨‹åº")           #çª—å£å
@@ -445,18 +451,45 @@ class GUI():
         # self.init_data_label.grid(row=0, column=0)
 
         # self.result_data_label = Label(self.init_window_name, text="è¾“å‡ºç»“æœ")
+=======
+    #ÉèÖÃ´°¿Ú
+    def set_init_window(self):
+        self.init_window_name.title("À¶ÑÀBeacon²âÊÔ³ÌĞò")           #´°¿ÚÃû
+        self.init_window_name.geometry('700x581+10+10')
+        #self.init_window_name["bg"] = "pink"                                    #´°¿Ú±³¾°É«£¬ÆäËû±³¾°É«¼û£ºblog.csdn.net/chl0000/article/details/7657887
+        #self.init_window_name.attributes("-alpha",0.9)                          #Ğé»¯£¬ÖµÔ½Ğ¡Ğé»¯³Ì¶ÈÔ½¸ß
+        #±êÇ©
+        # self.init_data_label = Label(self.init_window_name, text="°´Å¥°´ÏÂÊ±£¬Èç¹ûÈí¼şÉÁÍË£¬ËµÃ÷Ó²¼şµçÂ·Á¬½Ó´æÔÚÎÊÌâ£¡")
+        # self.init_data_label.grid(row=0, column=0)
+
+        # self.result_data_label = Label(self.init_window_name, text="Êä³ö½á¹û")
+>>>>>>> debug_aslan_en_beacon
         # self.result_data_label.grid(row=0, column=12)
-        # self.log_label = Label(self.init_window_name, text="æ—¥å¿—")
+        # self.log_label = Label(self.init_window_name, text="ÈÕÖ¾")
         # self.log_label.grid(row=12, column=0)
+<<<<<<< HEAD
         #æŒ‰é’®
         self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 16), text="ä½¿èƒ½Beacon",
                                                 bg="DarkGray", width=40, height=10, command=self.enable_beacon)
         self.enable_beacon_mode_button.grid(row=1, column=1)
+=======
+        #°´Å¥
+        # self.str_trans_to_md5_button = Button(self.init_window_name, text="×Ö·û´®×ªMD5", bg="lightblue", width=10,command=self.str_trans_to_md5)  # µ÷ÓÃÄÚ²¿·½·¨  ¼Ó()ÎªÖ±½Óµ÷ÓÃ
+
+        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="Ê¹ÄÜBeacon", bg="DarkGray", width=50,
+                                                height=10, command=self.enable_beacon)
+        self.enable_beacon_mode_button.grid(row=10, column=10)
+
+        self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 18), text="¹Ø±ÕBeacon", bg="MediumSeaGreen", width=50,
+                                                height=10, command=self.disable_beacon)
+        self.enable_beacon_mode_button.grid(row=100, column=10)
+>>>>>>> debug_aslan_en_beacon
 
         self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 16), text="å…³é—­Beacon",
                                                 bg="MediumSeaGreen", width=40, height=10, command=self.disable_beacon)
         self.enable_beacon_mode_button.grid(row=2, column=1)
 
+<<<<<<< HEAD
         self.scan_rssi_button = Button(self.init_window_name, font=('Arial', 16), text="scan rssi", bg="DarkGray",
                                        width=10, height=10, command=self.scan_beacon)
         self.scan_rssi_button.grid(row=1, column=2)
@@ -500,20 +533,77 @@ class GUI():
         else:
             tkinter.messagebox.showinfo('å¤±è´¥', 'äº§å“ä¸è‰¯')
             print("test fail!")
+=======
+    #¹¦ÄÜº¯Êı
+    def enable_beacon(self):
+        for i in range(5):
+            if enable_beacon_mode() == 0:
+                # self.init_data_label = Label(self.init_window_name, text="[enable]ÖØÊÔ´ÎÊı:" + str(0))
+                # self.init_data_label.grid(row=30, column=0)
+                break
+            else:
+                self.init_data_label = Label(self.init_window_name, text="[enable]ÖØÊÔ´ÎÊı:" + str(i + 1))
+                self.init_data_label.grid(row=30, column=0)
+                print("[enable]retry times:" + str(i + 1))
+>>>>>>> debug_aslan_en_beacon
 
+    def disable_beacon(self):
 
-    #è·å–å½“å‰æ—¶é—´
+        for i in range(5):
+            if disable_beacon_mode() == 0:
+                # self.init_data_label = Label(self.init_window_name, text="[disable]ÖØÊÔ´ÎÊı:" + str(0))
+                # self.init_data_label.grid(row=60, column=0)
+                break
+            else:
+                self.init_data_label = Label(self.init_window_name, text="[disable]ÖØÊÔ´ÎÊı:" + str(i + 1))
+                self.init_data_label.grid(row=60, column=0)
+                print("[disable]retry times:" + str(i + 1))
+    #»ñÈ¡µ±Ç°Ê±¼ä
     def get_current_time(self):
         current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
         return current_time
 
 
 def gui_start():
-    init_window = Tk()              # å®ä¾‹åŒ–å‡ºä¸€ä¸ªçˆ¶çª—å£
+    init_window = Tk()              # ÊµÀı»¯³öÒ»¸ö¸¸´°¿Ú
     ui = GUI(init_window)
-    # è®¾ç½®æ ¹çª—å£é»˜è®¤å±æ€§
+    # ÉèÖÃ¸ù´°¿ÚÄ¬ÈÏÊôĞÔ
     ui.set_init_window()
-    init_window.mainloop()          # çˆ¶çª—å£è¿›å…¥äº‹ä»¶å¾ªç¯ï¼Œå¯ä»¥ç†è§£ä¸ºä¿æŒçª—å£è¿è¡Œï¼Œå¦åˆ™ç•Œé¢ä¸å±•ç¤º
+    init_window.mainloop()          # ¸¸´°¿Ú½øÈëÊÂ¼şÑ­»·£¬¿ÉÒÔÀí½âÎª±£³Ö´°¿ÚÔËĞĞ£¬·ñÔò½çÃæ²»Õ¹Ê¾
+
+
+
+def log_init():
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                        datefmt='%a, %d %b %Y %H:%M:%S',
+                        filename='myapp.log',
+                        filemode='w')
+
+
+    from logging.handlers import RotatingFileHandler
+
+    #################################################################################################
+    # ¶¨ÒåÒ»¸öRotatingFileHandler£¬×î¶à±¸·İ5¸öÈÕÖ¾ÎÄ¼ş£¬Ã¿¸öÈÕÖ¾ÎÄ¼ş×î´ó10M
+    Rthandler = RotatingFileHandler('myapp.log', maxBytes=10 * 1024 * 1024, backupCount=5)
+    Rthandler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    Rthandler.setFormatter(formatter)
+    logging.getLogger('').addHandler(Rthandler)
+    ################################################################################################
+
+    #################################################################################################
+    # ¶¨ÒåÒ»¸öStreamHandler£¬½«INFO¼¶±ğ»ò¸ü¸ßµÄÈÕÖ¾ĞÅÏ¢´òÓ¡µ½±ê×¼´íÎó£¬²¢½«ÆäÌí¼Óµ½µ±Ç°µÄÈÕÖ¾´¦Àí¶ÔÏó#
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
+    #################################################################################################
+
+    # logging.debug('This is debug message')
+    # logging.info('This is info message')
+    # logging.warning('This is warning message')
 
 
 
