@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import time
 
 import serial
 import serial.tools.list_ports
@@ -86,6 +87,19 @@ class serial_class(object):
         except Exception as e:
             print("error! close_port:", e)
 
+    def read_data(self, ser):
+        global DATA, NOEND
+
+        # 循环接收数据（此为死循环，可用线程实现）
+        while NOEND:
+            if ser.in_waiting:
+                # DATA = ser.read(ser.in_waiting).decode("gbk")
+                DATA = ser.readline().decode("gbk")
+                # print(DATA)
+                # print("\n>> receive: ", DATA, "\n>>", end="")
+                if (DATA == "quit" or DATA == "quit\n"):
+                    print("seri has closen.\n>>", end="")
+
     def new_port(self, com=None, bps=115200, timeout=100):
         serial_port = ""
         ret_val = False
@@ -94,7 +108,7 @@ class serial_class(object):
                 serial_port = serial.Serial(com, bps, timeout=timeout)  # 打开串口，并得到串口对象
                 if serial_port.is_open:  # 判断是否成功打开
                     ret_val = True
-                    t = threading.Thread(args=(serial_port,), target=read_data)  # 创建一个子线程去等待读数据
+                    t = threading.Thread(args=(serial_port,), target=self.read_data)  # 创建一个子线程去等待读数据
                     t.setDaemon(True)  # 守护线程
                     t.start()
                     # t.join(1)
@@ -105,21 +119,6 @@ class serial_class(object):
 
 DATA = ""  # 读取的数据
 NOEND = True  # 是否读取结束
-
-
-# 读数据的本体
-def read_data(ser):
-    global DATA, NOEND
-
-    # 循环接收数据（此为死循环，可用线程实现）
-    while NOEND:
-        if ser.in_waiting:
-            # DATA = ser.read(ser.in_waiting).decode("gbk")
-            DATA = ser.readline().decode("gbk")
-            # print(DATA)
-            # print("\n>> receive: ", DATA, "\n>>", end="")
-            if (DATA == "quit" or DATA == "quit\n"):
-                print("oppo seri has closen.\n>>", end="")
 
 # 读数据
 def read_from_seri():
@@ -138,6 +137,8 @@ if __name__ == "__main__":
     print(ret)
     # print(pt)
     sp.write(pt, "scan_beacon\r\n")
+    time.sleep(1)
+    print(read_from_seri())
     # sp.close_port(pt)
 
     # while True:

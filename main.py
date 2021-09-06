@@ -325,7 +325,6 @@ def aslan_pack_beacon_thermal_pin(status):
     return ret, error_info
 
 
-
 # dev_addr:21
 # reg_addr:0A
 #
