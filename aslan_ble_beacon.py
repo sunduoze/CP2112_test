@@ -441,7 +441,7 @@ class GUI():
 
     # 设置窗口
     def set_init_window(self):
-        self.init_window_name.title("蓝牙Beacon测试程序")  # 窗口名
+        self.init_window_name.title("TWS蓝牙Beacon测试程序")  # 窗口名
         self.init_window_name.geometry('700x581+10+10')
         # self.init_window_name["bg"] = "pink"                                    #窗口背景色，其他背景色见：blog.csdn.net/chl0000/article/details/7657887
         # self.init_window_name.attributes("-alpha",0.9)                          #虚化，值越小虚化程度越高
@@ -471,16 +471,16 @@ class GUI():
     def enable_beacon(self):
         for i in range(config['aslan']['enable_beacon']['retry_times']):
             if enable_beacon_mode() == 0:
-
-                rssi_status, rssi_val = serial_read_data_from_cc2540(config['aslan']['ble_scan']['rssi_down_limit'],
-                                                                     config['aslan']['ble_scan']['scan_times'],
-                                                                     config['aslan']['ble_scan']['scan_cycle'])
-                if rssi_status is True:
-                    tkinter.messagebox.showinfo('PASS', '良品' + str(rssi_val) + "dB")
-                    print('PASS', '良品' + str(rssi_val) + "dB")
-                else:
-                    tkinter.messagebox.showinfo('失败', '产品不良')
-                    print("test fail!")
+                if config['aslan']['UI_display']['scan_rssi'] == 'True':
+                    rssi_status, rssi_val = serial_read_data_from_cc2540(config['aslan']['ble_scan']['rssi_down_limit'],
+                                                                         config['aslan']['ble_scan']['scan_times'],
+                                                                         config['aslan']['ble_scan']['scan_cycle'])
+                    if rssi_status is True:
+                        tkinter.messagebox.showinfo('PASS', '良品' + str(rssi_val) + "dB")
+                        print('PASS', '良品' + str(rssi_val) + "dB")
+                    else:
+                        tkinter.messagebox.showinfo('失败', '产品不良')
+                        print("test fail!")
 
                 # self.init_data_label = Label(self.init_window_name, text="[enable]重试次数:" + str(0))
                 # self.init_data_label.grid(row=30, column=0)
@@ -543,14 +543,14 @@ def log_init():
     logging.basicConfig(level=log_level,
                         format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
                         datefmt='%a, %d %b %Y %H:%M:%S',
-                        filename='myapp.log',
+                        filename='aslan_ble_beacon.log',
                         filemode='w')
 
     from logging.handlers import RotatingFileHandler
 
     #################################################################################################
     # 定义一个RotatingFileHandler，最多备份5个日志文件，每个日志文件最大10M
-    Rthandler = RotatingFileHandler('myapp.log', maxBytes=10 * 1024 * 1024, backupCount=5)
+    Rthandler = RotatingFileHandler('aslan_ble_beacon.log', maxBytes=10 * 1024 * 1024, backupCount=5)
     Rthandler.setLevel(logging.INFO)
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     Rthandler.setFormatter(formatter)
@@ -578,10 +578,10 @@ def get_config_file():
         cfg_dict = config_file()
         status = cfg_dict.file_is_null()
         if status is False:
-            print("file is full")
+            print("config file is full")
             dict_temp = cfg_dict.read()
         else:
-            print("file is null")
+            print("config file is null")
             cfg_dict.add(cfg_dict.str_to_dict(cfg_dict.init_dict))
             dict_temp = cfg_dict.read()
         res = True
@@ -592,7 +592,8 @@ def get_config_file():
 
 
 if __name__ == '__main__':
-
+    print("TWS蓝牙Beacon测试程序 debug version")
+    print("@Enzo.sun 17520062571")
     ret_temp, config = get_config_file()
     if ret_temp is False:
         logging.error("ERROR: get_config_file fail")

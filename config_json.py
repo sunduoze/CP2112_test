@@ -1,6 +1,13 @@
 import os
 import json
 
+debug_status = False
+
+
+def debug(*kwargs):
+    if debug_status:
+        print(*kwargs)
+
 
 class config_file:
     def __init__(self):
@@ -48,27 +55,27 @@ class config_file:
 
     def file_is_null(self):
         file_size = os.path.getsize(self.path)
-        print("process")
+        debug("file_is_null func process")
         if file_size == 0:
-            print('文件是空的')
+            debug('文件是空的')
             return True
         else:
-            print('文件不是空的')
+            debug('文件不是空的')
             return False
 
     def read(self):
         # 加载文件到dict
         with open(self.path, 'r') as load_file:
             load_dict = json.load(load_file)
-            print(load_dict)
-            print("读取文件完成...")
+            debug(load_dict)
+            debug("读取文件完成...")
         return load_dict
 
     # 写入dict到文件
     def add(self, dict_file):
         with open(self.path, "w") as file_temp:
             json.dump(dict_file, file_temp)
-            print("写入文件完成...")
+            debug("写入文件完成...")
 
     def erase_then_write(self):
         print("test")
@@ -84,8 +91,8 @@ class config_file:
 
         # loads 将字符串加载成字典
         dict_temp = json.loads(json_str)
-        print(dict_temp)
-        print(type(dict_temp))
+        debug(dict_temp)
+        debug(type(dict_temp))
         return dict_temp
 
 
@@ -118,4 +125,3 @@ if __name__ == '__main__':
     else:
         print("file is null")
         func_add_file(cfg)
-
