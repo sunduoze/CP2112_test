@@ -281,10 +281,25 @@ def addr_write(dev_addr, reg_addr, reg_addr_len, data, data_len):
 
     return get_status(dev)
 
+## rate power data enable 20210908
 
 def aslan_pack_beacon_config():
     ret = 0
     buffer_array = c_byte * 64
+
+    # Tx rate set
+    buf = buffer_array(0x0A,
+                       0x04, 0x83, 0x00, 0x01, 0x65, 0x0D)
+    if addr_write(0x42, 0x00, 0, buf, 7) is False:
+        ret = ret + 1
+    time.sleep(0.1)
+
+    # Tx power set
+    buf = buffer_array(0x0A,
+                       0x03, 0x82, 0x01, 0x4B, 0x0D)
+    if addr_write(0x42, 0x00, 0, buf, 6) is False:
+        ret = ret + 1
+    time.sleep(0.1)
 
     # Beacon data
     buf = buffer_array(0x0A,
@@ -297,19 +312,6 @@ def aslan_pack_beacon_config():
         ret = ret + 1
     time.sleep(0.1)
 
-    # Tx power set
-    buf = buffer_array(0x0A,
-                       0x03, 0x82, 0x01, 0x4B, 0x0D)
-    if addr_write(0x42, 0x00, 0, buf, 6) is False:
-        ret = ret + 1
-    time.sleep(0.1)
-
-    # Tx rate set
-    buf = buffer_array(0x0A,
-                       0x04, 0x83, 0x00, 0x01, 0x65, 0x0D)
-    if addr_write(0x42, 0x00, 0, buf, 7) is False:
-        ret = ret + 1
-    time.sleep(0.1)
 
     # # beacon enable
     #     buf = buffer_array(0x0A,
