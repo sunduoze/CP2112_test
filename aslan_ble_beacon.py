@@ -446,10 +446,10 @@ def enable_beacon_debug_mode():
     print("debug:enable_beacon_debug_mode")
     ret = 0
     aslan_pack_beacon_thermal_pin(True)
-    time.sleep(6)
+    time.sleep(1)
 
     aslan_pack_beacon_thermal_pin(False)
-    time.sleep(6)
+    # time.sleep(6)
     logging.info("-------end of ctrl----------enable\r\n\r\n")
 
     return ret
@@ -516,16 +516,16 @@ class GUI():
         # self.log_label.grid(row=12, column=0)
         # 按钮
         self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 16), text="使能Beacon",
-                                                bg="DarkGray", width=40, height=10, command=self.enable_beacon)
+                                                bg="DarkGray", width=40, height=10, command=self.debug_function)
         self.enable_beacon_mode_button.grid(row=1, column=1)
 
         self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 16), text="关闭Beacon",
                                                 bg="MediumSeaGreen", width=40, height=10, command=self.disable_beacon)
         self.enable_beacon_mode_button.grid(row=2, column=1)
 
-        self.debug_button = Button(self.init_window_name, font=('Arial', 16), text="debug Beacon",
-                                   bg="MediumSeaGreen", width=40, height=10, command=self.debug_function)
-        self.debug_button.grid(row=3, column=1)
+        # self.debug_button = Button(self.init_window_name, font=('Arial', 16), text="debug Beacon",
+        #                            bg="MediumSeaGreen", width=40, height=10, command=self.debug_function)
+        # self.debug_button.grid(row=3, column=1)
 
 
         if config['aslan']['UI_display']['scan_rssi'] == 'True':
@@ -603,7 +603,7 @@ class GUI():
         time.sleep(6)
         print("test 2---------------------------")
         for i in range(config['aslan']['enable_beacon']['retry_times']):
-            if enable_beacon_debug_mode() == 0:
+            if enable_beacon_mode() == 0:
                 if config['aslan']['UI_display']['scan_rssi'] == 'True':
                     rssi_status, rssi_val = serial_read_data_from_cc2540(config['aslan']['ble_scan']['rssi_down_limit'],
                                                                          config['aslan']['ble_scan']['scan_times'],
