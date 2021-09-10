@@ -7,6 +7,8 @@
 # Tx rate set   W:04 83 00 01 65 0D
 # Tx power set  W:03 82 01 0B 0D
 # Beacon data   W:1F 86 02 1B FF 01 F1 BE AC 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF 1A EB EB EC DD C3 00 1A 0D
+# read version
+# , 0x0A, 0x02, 0x01, 0x7d, 0x0d
 
 import logging
 from ctypes import *
@@ -288,15 +290,13 @@ def aslan_pack_beacon_config():
     buffer_array = c_byte * 64
 
     # Tx rate set
-    buf = buffer_array(0x0A,
-                       0x04, 0x83, 0x00, 0x01, 0x65, 0x0D)
+    buf = buffer_array(0x0A, 0x04, 0x83, 0x00, 0x01, 0x65, 0x0D)
     if addr_write(0x42, 0x00, 0, buf, 7) is False:
         ret = ret + 1
     time.sleep(0.1)
 
     # Tx power set
-    buf = buffer_array(0x0A,
-                       0x03, 0x82, 0x01, 0x4B, 0x0D)
+    buf = buffer_array(0x0A, 0x03, 0x82, 0x01, 0x4B, 0x0D)
     if addr_write(0x42, 0x00, 0, buf, 6) is False:
         ret = ret + 1
     time.sleep(0.1)
@@ -325,47 +325,6 @@ def aslan_pack_beacon_config():
     #     addr_write(0x42, 0x0A, 0, buf, 6)
     return ret
 
-def aslan_pack_beacon_config():
-    ret = 0
-    buffer_array = c_byte * 64
-
-    # Tx rate set
-    buf = buffer_array(0x0A,
-                       0x04, 0x83, 0x00, 0x01, 0x65, 0x0D)
-    if addr_write(0x42, 0x00, 0, buf, 7) is False:
-        ret = ret + 1
-    time.sleep(0.1)
-
-    # Tx power set
-    buf = buffer_array(0x0A,
-                       0x03, 0x82, 0x01, 0x4B, 0x0D)
-    if addr_write(0x42, 0x00, 0, buf, 6) is False:
-        ret = ret + 1
-    time.sleep(0.1)
-
-    # Beacon data
-    buf = buffer_array(0x0A,
-                       0x1F, 0x86, 0x02, 0x1B, 0xFF, 0x01, 0xF1, 0xBE,
-                       0xAC, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-                       0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF,
-                       0x1A, 0xEB, 0xEB, 0xEC, 0xDD, 0xC3, 0x00, 0x1A,
-                       0x0D)
-    if addr_write(0x42, 0x00, 0, buf, 34) is False:
-        ret = ret + 1
-    time.sleep(0.1)
-
-
-    # # beacon enable
-    #     buf = buffer_array(0x0A,
-    #                        0x03, 0x84, 0x01, 0x4B, 0x0D)
-    #     addr_write(0x42, 0x0A, 0, buf, 6)
-    #     time.sleep(0.1)
-
-    # # beacon disable
-    #     buf = buffer_array(0x0A,
-    #                        0x03, 0x84, 0x00, 0x02, 0x0D)
-    #     addr_write(0x42, 0x0A, 0, buf, 6)
-    return ret
 
 def aslan_pack_beacon_status(status):
     ret = 0
@@ -407,11 +366,29 @@ def aslan_pack_beacon_thermal_pin(status):
         logging.info("default(internel pull down 100k), beacon boardcast mode")
     return ret, error_info
 
+def aslan_pack_beacon_scl_pin(status):
+    # Set all GPIO to OUTPUT
+    # 0xF0: GPIO 0:3 ->input 4:7 ->output
+    ret, error_info = cp2112.HidSmbus_SetGpioConfig(dev, c_byte(0xF0), c_byte(0xF0), c_byte(0x00), c_byte(0x00))
+    # print(ret, error_info)
+    if (status is True):
+        # 0xF0: GPIO 0:3 ->low 5:5 -> high 5:7 ->low
+        ret = cp2112.HidSmbus_WriteLatch(dev, c_byte(0x20), c_byte(0xFF))
+        # print("pin pull high, i2c cmd mode")
+        logging.info("pin pull high, i2c cmd mode")
+    else:
+        ret = cp2112.HidSmbus_WriteLatch(dev, c_byte(0x00), c_byte(0xFF))
+        # print("default(internel pull down 100k), beacon boardcast mode")
+        logging.info("default(internel pull down 100k), beacon boardcast mode")
+    return ret, error_info
+
+
 
 def enable_beacon_mode():
     ret = 0
     aslan_pack_beacon_thermal_pin(True)
-    time.sleep(6)
+    time.sleep(config['aslan']['enable_beacon']['therm_pull_high_delay'])
+
     if aslan_pack_beacon_config() == 0:
         time.sleep(0.1)
         #### enable
@@ -421,19 +398,13 @@ def enable_beacon_mode():
             aslan_pack_beacon_thermal_pin(False)
             logging.error("enable fail\r\n\r\n")
             return ret
-        #### disable
-        # aslan_pack_beacon_status(False)
-
-        # time.sleep(10)
-        # aslan_pack_beacon_thermal_pin(False)
-        # time.sleep(10)
-        # aslan_pack_beacon_thermal_pin(True)
-        # time.sleep(10)
-        time.sleep(6)
-
         time.sleep(0.1)
-        aslan_pack_beacon_thermal_pin(False)
+        aslan_pack_beacon_scl_pin(True)
+        time.sleep(0.1)
+        aslan_pack_beacon_scl_pin(False)
         time.sleep(6)
+        aslan_pack_beacon_thermal_pin(False)
+        time.sleep(config['aslan']['enable_beacon']['therm_pull_low_delay'])
         logging.info("-------end of ctrl----------enable\r\n\r\n")
     else:
         ret = ret + 1
@@ -458,6 +429,7 @@ def disable_beacon_mode():
     ret = 0
     aslan_pack_beacon_thermal_pin(True)
     time.sleep(6)
+    time.sleep(config['aslan']['disable_beacon']['therm_pull_high_delay'])
     if aslan_pack_beacon_config() == 0:
         time.sleep(0.1)
 
@@ -472,7 +444,7 @@ def disable_beacon_mode():
             return ret
         time.sleep(1)
         aslan_pack_beacon_thermal_pin(False)
-        time.sleep(1)
+        time.sleep(config['aslan']['disable_beacon']['therm_pull_low_delay'])
         logging.info("-------end of ctrl----------disable\r\n\r\n")
     else:
         ret = ret + 1
@@ -516,16 +488,16 @@ class GUI():
         # self.log_label.grid(row=12, column=0)
         # 按钮
         self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 16), text="使能Beacon",
-                                                bg="DarkGray", width=40, height=10, command=self.debug_function)
+                                                bg="DarkGray", width=40, height=10, command=self.enable_beacon)
         self.enable_beacon_mode_button.grid(row=1, column=1)
 
         self.enable_beacon_mode_button = Button(self.init_window_name, font=('Arial', 16), text="关闭Beacon",
                                                 bg="MediumSeaGreen", width=40, height=10, command=self.disable_beacon)
         self.enable_beacon_mode_button.grid(row=2, column=1)
 
-        # self.debug_button = Button(self.init_window_name, font=('Arial', 16), text="debug Beacon",
-        #                            bg="MediumSeaGreen", width=40, height=10, command=self.debug_function)
-        # self.debug_button.grid(row=3, column=1)
+        self.debug_button = Button(self.init_window_name, font=('Arial', 16), text="debug Beacon",
+                                   bg="MediumSeaGreen", width=40, height=10, command=self.debug_function)
+        self.debug_button.grid(row=3, column=1)
 
 
         if config['aslan']['UI_display']['scan_rssi'] == 'True':
@@ -578,53 +550,16 @@ class GUI():
             tkinter.messagebox.showinfo('失败', '产品不良')
             print("test fail!")
     def debug_function(self):
-        print("debug:")
-        for i in range(config['aslan']['enable_beacon']['retry_times']):
-            if enable_beacon_mode() == 0:
-                if config['aslan']['UI_display']['scan_rssi'] == 'True':
-                    rssi_status, rssi_val = serial_read_data_from_cc2540(config['aslan']['ble_scan']['rssi_down_limit'],
-                                                                         config['aslan']['ble_scan']['scan_times'],
-                                                                         config['aslan']['ble_scan']['scan_cycle'])
-                    if rssi_status is True:
-                        tkinter.messagebox.showinfo('PASS', '良品' + str(rssi_val) + "dB")
-                        print('PASS', '良品' + str(rssi_val) + "dB")
-                    else:
-                        tkinter.messagebox.showinfo('失败', '产品不良')
-                        print("test fail!")
-
-                # self.init_data_label = Label(self.init_window_name, text="[enable]重试次数:" + str(0))
-                # self.init_data_label.grid(row=30, column=0)
-                break
-            else:
-                if config['aslan']['UI_display']['retry_times'] == 'True':
-                    self.init_data_label = Label(self.init_window_name, text="[enable]重试次数:" + str(i + 1))
-                    self.init_data_label.grid(row=30, column=0)
-                    print("[enable]retry times:" + str(i + 1))
-        time.sleep(6)
-        print("test 2---------------------------")
-        for i in range(config['aslan']['enable_beacon']['retry_times']):
-            if enable_beacon_mode() == 0:
-                if config['aslan']['UI_display']['scan_rssi'] == 'True':
-                    rssi_status, rssi_val = serial_read_data_from_cc2540(config['aslan']['ble_scan']['rssi_down_limit'],
-                                                                         config['aslan']['ble_scan']['scan_times'],
-                                                                         config['aslan']['ble_scan']['scan_cycle'])
-                    if rssi_status is True:
-                        tkinter.messagebox.showinfo('PASS', '良品' + str(rssi_val) + "dB")
-                        print('PASS', '良品' + str(rssi_val) + "dB")
-                    else:
-                        tkinter.messagebox.showinfo('失败', '产品不良')
-                        print("test fail!")
-
-                # self.init_data_label = Label(self.init_window_name, text="[enable]重试次数:" + str(0))
-                # self.init_data_label.grid(row=30, column=0)
-                print("test 2---pass----------------------")
-                break
-
-            else:
-                if config['aslan']['UI_display']['retry_times'] == 'True':
-                    self.init_data_label = Label(self.init_window_name, text="[enable]重试次数:" + str(i + 1))
-                    self.init_data_label.grid(row=30, column=0)
-                    print("[enable]retry2 times:" + str(i + 1))
+        print("debug_function:")
+        for i in range(10):
+            print("high:")
+            # aslan_pack_beacon_thermal_pin(True)
+            aslan_pack_beacon_scl_pin(True)
+            time.sleep(1)
+            print("low:")
+            # aslan_pack_beacon_thermal_pin(False)
+            aslan_pack_beacon_scl_pin(False)
+            time.sleep(1)
 
     # 获取当前时间
     def get_current_time(self):
