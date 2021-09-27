@@ -353,7 +353,7 @@ def aslan_pack_beacon_status(status):
 def aslan_pack_beacon_thermal_pin(status):
     # Set all GPIO to OUTPUT
     # 0xF0: GPIO 0:3 ->input 4:7 ->output
-    ret, error_info = cp2112.HidSmbus_SetGpioConfig(dev, c_byte(0xF0), c_byte(0x00), c_byte(0x00), c_byte(0x00))
+    ret, error_info = cp2112.HidSmbus_SetGpioConfig(dev, c_byte(0xF0), c_byte(0xF0), c_byte(0x00), c_byte(0x00))
     # print(ret, error_info)
     if (status is True):
         # 0xF0: GPIO 0:3 ->low 4:4 -> high 5:7 ->low
@@ -400,7 +400,7 @@ def enable_beacon_mode():
             return ret
         time.sleep(0.1)
         aslan_pack_beacon_scl_pin(True)
-        time.sleep(0.1)
+        time.sleep(3)
         aslan_pack_beacon_scl_pin(False)
         time.sleep(6)
         aslan_pack_beacon_thermal_pin(False)
