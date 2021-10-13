@@ -399,8 +399,8 @@ def enable_beacon_mode():
             logging.error("enable fail\r\n\r\n")
             return ret
         time.sleep(0.1)
-        aslan_pack_beacon_scl_pin(True)
-        time.sleep(3)
+        aslan_pack_beacon_scl_pin(True)  # reset dut
+        time.sleep(config['aslan']['enable_beacon']['reset_scl_delay'])
         aslan_pack_beacon_scl_pin(False)
         time.sleep(6)
         aslan_pack_beacon_thermal_pin(False)
@@ -510,6 +510,7 @@ class GUI():
         for i in range(config['aslan']['enable_beacon']['retry_times']):
             if enable_beacon_mode() == 0:
                 if config['aslan']['UI_display']['scan_rssi'] == 'True':
+                    print("[OK]enable_beacon_mode\r\n")
                     rssi_status, rssi_val = serial_read_data_from_cc2540(config['aslan']['ble_scan']['rssi_down_limit'],
                                                                          config['aslan']['ble_scan']['scan_times'],
                                                                          config['aslan']['ble_scan']['scan_cycle'])
