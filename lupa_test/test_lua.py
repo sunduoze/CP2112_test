@@ -40,7 +40,7 @@ class Executor(threading.Thread):
         # 上锁,保证多个线程加载不会冲突
         if Executor.lock.acquire():
             if Executor.luaRuntime is None:
-                fileHandler = open('./test.lua')
+                fileHandler = open('test_lua.lua')
                 content = ''
                 try:
                     content = fileHandler.read()

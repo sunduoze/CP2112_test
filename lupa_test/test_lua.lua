@@ -20,6 +20,9 @@ function functionCall(func_name,params)
     return result
 end
 
+-- call python function
+--python.eval("pyTcpInit('192.168.1.10', 8888)")
+
 --TcpInit(1,2)
 print(a)
 print(b)

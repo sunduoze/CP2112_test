@@ -10,12 +10,12 @@ def py_func(p):
 
 
 def pyTcpInit(Ip: str, Port: int):
-    print(Ip + ":", Port)
+    print("python func exec:" + Ip + ":", Port)
     return 0
 
 
 if __name__ == "__main__":
-    fileHandler = open('./test.lua')
+    fileHandler = open('test.lua')
     content = fileHandler.read()
 
     # 获取lua脚本中的全局变量值
@@ -34,11 +34,11 @@ if __name__ == "__main__":
 
     lua.execute('ret=1234;print(ret);')
 
-    # eval返回的是一个lua call到py call的映射
-    pycall = lua.eval('function(pyfunc, param1, param2) '
-                      'ret = pyfunc(param1, param2) '
-                      'end')
-    pycall(pyTcpInit, '192.168.1.10', 8888)
+    # # eval返回的是一个lua call到py call的映射
+    # pycall = lua.eval('function(pyfunc, param1, param2) '
+    #                   'ret = pyfunc(param1, param2) '
+    #                   'end')
+    # pycall(pyTcpInit, '192.168.1.10', 8888)
 
     # execute无返回，打印出来是None
     lua.execute(content)
