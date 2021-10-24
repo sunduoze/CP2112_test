@@ -6,6 +6,7 @@ import serial.tools.list_ports
 import threading
 import re
 
+import lupa
 
 debug_status = False
 
