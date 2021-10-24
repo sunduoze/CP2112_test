@@ -100,6 +100,34 @@ local function Getindex()
 	return true
 end
 
+local function gettime_slot()
+    lua_str = "gettime_slot()"
+    p(lua_str)
+    --python.eval(lua_str)
+	return true
+end
+
+
+local function Setbinding(str)
+    lua_str = "Setbinding(\"" .. str .. "\")"
+    p(lua_str)
+    python.eval(lua_str)
+	return true
+end
+
+local function set_test_state(status)
+    lua_str = "Setbinding(" .. tostring(status) .. ")"
+    p(lua_str)
+    python.eval(lua_str)
+	return true
+end
+
+local function LogPush(str)
+    lua_str = "LogPush(\"" .. str .. "\")"
+    p(lua_str)
+    python.eval(lua_str)
+	return true
+end
 
 TcpInit('192.168.1.10', 8888)
 --
@@ -208,3 +236,230 @@ function set_test_state( newstate )
 end
 
 
+function SetUI_Auto(TestItemName,ActMeas,LimitMin,LimitMax)
+	-- body
+	local Time 		= ""
+	local ErrInfo 	= ""
+	local TestRest  = false
+	--num type
+	if type(ActMeas) =="number" and type(LimitMin) =="number" and type(LimitMax) == "number" then
+		if ActMeas >=LimitMin and ActMeas <= LimitMax then
+			TestRest =true
+		end
+	--string type
+	elseif type(ActMeas) == "string" and type(LimitMin) == "string"  and type(LimitMax) == "string" then
+		if ActMeas == LimitMin and ActMeas == LimitMax then
+			TestRest = true
+		end
+	end
+	local Time = gettime_slot()
+	Setbinding(tostring(TestItemName),tostring(TestRest),tostring(ActMeas),tostring(Time),tostring(ErrInfo),tostring(LimitMin),tostring(LimitMax))
+
+	set_test_state(TestRest)
+
+	LogPush(TestItemName .. ","..tostring(ActMeas).. ","..tostring(TestRest)..",")
+	return TestRest
+end
+
+function SetUI_Error()
+	-- body
+end
+
+function SetUI(TestItemName,ActMeas,TestRest,Time,ErrInfo,LimitMin,LimitMax)
+	if LimitMin == nil  then
+		LimitMin = ""
+	end
+	if LimitMax == nil then
+		LimitMax = ""
+	end
+	Setbinding(tostring(TestItemName),tostring(TestRest),tostring(ActMeas),tostring(Time),tostring(ErrInfo),tostring(LimitMin),tostring(LimitMax))
+	_KeepRet = _KeepRet .. tostring(TestRest)
+end
+
+--judge value is in table
+function  is_intable( value, table1 )
+	for k,port in pairs(table1) do
+		if port == value then
+			return true
+		end
+	end
+	return false
+end
+--num 2 hex string, default is 2, max is 8
+function num2hexstr_s( Num, ...)
+	local len 			= ...
+	if len == nil then len = 2 end
+	if len >= 8   then len = 8 end
+	local NumQt 		= Num 		--quotient /
+	local NumStr 		= ""
+	local i = 1
+	repeat
+		NumL 	= NumQt % 16		--remainder %
+		NumQt 	= NumQt / 16		--quotient /
+		sNumL =string.format("%X", NumL)
+		NumStr = sNumL .. NumStr
+		i = i + 1
+	until i > len
+
+	return NumStr
+end
+--hex string to n bit num
+  -- {--eg: hexstr2num_n("123",1,2)convert from 1 to 2
+   	 -- hexstr2num_n("123",3) 	convert first 3
+   	 -- hexstr2num_n("1234",-3) convert last 3
+   	 -- hexstr2num_n("1234")	convert all
+  -- }
+function hexstr2num_n(str,... )
+	local arry 		= {...}
+	local len_b 	= arry[1] --par1
+	local len_e 	= arry[2] --par2
+	local len_str 	= string.len(str)
+	--only one para
+	if len_e == nil then
+		if len_b == nil or len_b == 0 then 			--default:whole string convert
+			len_b = len_str
+		end
+		if math.abs(len_b)>len_str then --para setting abnormal,do not convert
+			len_b = 1
+		end
+		if len_b <-8 then len_b =-8 end --limit length
+		if len_b > 8 then len_b = 8 end
+
+		if len_b > 0 then 				--pos para
+			len_e = len_b
+			len_b = 1
+		elseif len_b < 0 then			--neg para
+			len_b = len_str +len_b + 1
+			len_e = len_str
+		end
+	--len_b:start address, len_e:stop address
+	else
+		if len_b < 0 then len_b = len_str + len_b + 1 	end 	--neg to pos
+		if len_e < 0 then len_e = len_str + len_e + 1 	end		--neg to pos
+		if len_e - len_b > 8 then len_e = len_b + 8 	end 	--para too long
+		if len_e - len_b < 0 then len_e = len_b 		end 	--para converted
+		if len_b <= 0 then len_b =1						end 	--para too long
+		if len_e >= len_str then len_e =len_str			end		--para too long
+	end
+	--len_b:start address, len_e:stop address
+	local num_str = string.upper(str)							--convert to capital
+	local num_arr = { ["0"] = 0, ["1"] = 1, ["2"] = 2, ["3"] = 3, ["4"] = 4, ["5"] = 5, ["6"] = 6, ["7"] = 7,
+					  ["8"] = 8, ["9"] = 9, ["A"] = 10,["B"] = 11,["C"] = 12,["D"] = 13,["E"] = 14,["F"] = 15 }
+	local num = 0
+	for i = len_b, len_e do
+		local num_b = num_arr[string.sub(num_str,i,i)]
+		if  num_b ~= nil then 	--prevent input char out of 0~9 & A~F
+			num = num*16 + num_b
+		end
+	end
+	return num
+end
+
+--crc8
+function crc8_msb_s( str )
+	local poly 	= 0x07
+	local init 	= 0x00
+	local i 	= 1
+	local crc 	= init
+	local len_check = (#str)%2
+	if len_check ~= 0 then
+		return ""
+	else
+		local len 	= (#str) /2   --2.5
+		local bittemp = 0
+		while(len > 0)
+		do
+			num = hexstr2num_n(string.sub(str,2*i-1,2*i))
+			crc = Xor(num, crc)
+			i = i + 1
+    	    for j = 0, 7 do
+    	        bittemp = BitAnd(crc, 0x80)
+    	        if(bittemp ~= 0)
+    	        then
+    	            crc = Xor(BitLeft(crc, 1), poly)
+    	            crc = BitAnd(crc, 0xFF)
+    	        else
+    	            crc = BitLeft(crc, 1)
+    	            crc = BitAnd(crc, 0xFF)
+    	        end
+    	    end
+    	    len = len - 1
+		end
+		crc = num2hexstr_s(crc, 2)
+		return crc
+	end
+end
+
+--calc checksum
+--[input]:string
+--[input]:checksum len
+function checksum_s( hexstr,...)
+	local len = ...
+	if(type(len) ~= "number") then
+		len = 2
+	end
+	if type(hexstr) ~= "string" then
+		hexstr = ""
+	end
+	local str_len 	= string.len(hexstr)
+	if str_len % 2 ==1 then
+		hexstr = ""
+		str_len 	= 0
+	end
+	local sum  		= 0
+	local num  		= 0
+	local sun_str   = ""
+
+	str_len = str_len / 2
+
+	for i = 1 ,str_len do
+		num = hexstr2num_n(string.sub(hexstr,2*i-1,2*i))
+		sum = sum + num
+	--	sum = sum % 256
+	end
+	return num2hexstr_s(sum,len)
+end
+
+--add checksum to the end of string
+function addchecksum_s( hexstr,len )
+	-- body
+	local sum = checksum_s( hexstr,len )
+	return hexstr .. sum
+end
+--msb to lsb
+function msb2lsb_hexstr(hexstr)
+	if type(hexstr) ~= "string" then
+		return hexstr
+	else
+		local str_len 	= string.len(hexstr)
+		local str_r		= ""
+		if (str_len % 2) == 1 then
+			str_len = str_len + 1
+			hexstr = string.sub(hexstr,1,-2) .. "0"..string.sub(hexstr,-1,-1)
+		end
+		str_len = str_len /2
+
+		for i = 1 , str_len do
+			str_r = str_r .. string.sub(hexstr,-2*i,-2*i+1)
+		end
+		return str_r
+	end
+end
+--get table data max diff value, Eg. for cell voltage difference
+function diff_value_n( table_value )
+	local value_max	= nil
+	local value_min = nil
+	for i ,value in pairs(table_value) do
+		if (value_max == nil or value_max < value) then
+			value_max = value
+		end
+		if (value_min == nil or value_min > value) then
+			value_min = value
+		end
+	end
+	if value_min ~= nil then
+		return value_max - value_min
+	else
+		return 0
+	end
+end
