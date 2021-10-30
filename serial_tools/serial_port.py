@@ -82,11 +82,13 @@ class serial_class(object):
         return res, ret_list
 
     def close_port(self, ser_port: serial.SerialBase):
+        res = False
         try:
-            ser_port.close()
+            res = ser_port.close()
             # debug("close serial port:" + ser_port)
         except Exception as e:
             print("error! close_port:", e)
+        return res
 
     def read_data(self, ser):
         global DATA, NOEND
@@ -96,7 +98,7 @@ class serial_class(object):
             if ser.in_waiting:
                 # DATA = ser.read(ser.in_waiting).decode("gbk")
                 DATA = ser.readline().decode("gbk")
-                # print(DATA)
+                print(DATA)
                 # print("\n>> receive: ", DATA, "\n>>", end="")
                 if (DATA == "quit" or DATA == "quit\n"):
                     print("seri has closen.\n>>", end="")
@@ -133,8 +135,10 @@ if __name__ == "__main__":
     sp = serial_class()
     ret, pt_list = sp.list_port
     print(ret)
+    for i in range(0, len(pt_list)):
+        print(pt_list[i])
     # ret, pt = sp.open_port(com="COM3", bps=115200)
-    ret, pt = sp.open_port(desc="ELTIMA Virtual Serial Port (COM2->COM1)")
+    ret, pt = sp.open_port(desc="ELTIMA Virtual Serial Port (COM2->COM1)", bps=115200)
     print(ret)
     # print(pt)
     sp.write(pt, "scan_beacon\r\n")
@@ -142,5 +146,5 @@ if __name__ == "__main__":
     print(read_from_seri())
     # sp.close_port(pt)
 
-    # while True:
-    #     i = 1
+    while True:
+        i = 1
