@@ -9,7 +9,7 @@ from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 
 from serial_port import *
-from serial_tools.serial_port import serial_class
+from serial_tools.serial_port import serial_class, stop_thread
 
 
 class GUI(tk.Tk):
@@ -28,6 +28,7 @@ class GUI(tk.Tk):
         # 设置根窗口默认属性
         self.set_init_window()
         self.init_menu()
+        self.refresh_port()
         self.refresh_data()
         self.mainloop()  # 父窗口进入事件循环，可以理解为保持窗口运行，否则界面不展示
 
@@ -207,8 +208,8 @@ class GUI(tk.Tk):
             .grid(row=self.start_row + 5, column=2, columnspan=1, rowspan=2)
 
         # 文本框
-        self.send_recv_text = ScrolledText(self, height=30, width=110) \
-            .grid(row=0, column=0, columnspan=15, rowspan=30, sticky='w')
+        self.send_recv_text = ScrolledText(self, height=30, width=110)
+        self.send_recv_text.grid(row=0, column=0, columnspan=15, rowspan=30, sticky='w')
 
         self.open_file_text = tk.Text(self, height=1, width=30) \
             .grid(row=self.start_row + 0, column=3, columnspan=3, sticky='w')
@@ -303,17 +304,21 @@ class GUI(tk.Tk):
         print("scan_beacon")
 
     def open_port(self):
-        global serial_pt
+        __serial_pt = None
+        __serial_th = None
         if self.open_close_bt_val.get() == "打开串口":
             com_x = re.search(r'COM\d{1,2}', self.comboxlist.get())
-            ret, serial_pt = self.port.open_port(com=com_x.group(), bps=self.baud_cbx.get())
+            ret, __serial_pt, __serial_th = self.port.open_port(com=com_x.group(), bps=self.baud_cbx.get())
             if ret is True:
                 self.open_close_bt_val.set("关闭串口")
-                self.port.write(serial_pt, "open port\r\n" + com_x.group() + " " + self.baud_cbx.get())
+                self.port.write(__serial_pt, "open port\r\n" + com_x.group() + " " + self.baud_cbx.get())
+                print(__serial_pt)
             else:
                 print("open port fail!")
         else:
-            ret = self.port.close_port(serial_pt)
+            # stop_thread(__serial_th)
+            print(__serial_pt)
+            ret = serial.SerialBase(__serial_pt).close()  # self.port.close_port(serial_pt, serial_th)
             if ret is True:
                 self.open_close_bt_val.set("打开串口")
             else:
@@ -324,11 +329,15 @@ class GUI(tk.Tk):
         ret, pt_list = self.port.list_port
         self.comboxlist["values"] = tuple(pt_list)
 
-    def refresh_data(self):
+    def refresh_port(self):
         ret, pt_list = self.port.list_port
         self.comboxlist["values"] = tuple(pt_list)
+        self.after(5000, self.refresh_port)  # 1000ms
 
-        self.after(10000, self.refresh_data)  # 1000ms
+    def refresh_data(self):
+        print(read_from_seri())
+        # self.send_recv_text.insert('end', read_from_seri())
+        self.after(100, self.refresh_data)  # 1000ms
 
     # # 获取当前时间
     # def get_current_time(self):
