@@ -3,7 +3,8 @@
 # dev_addr:21
 # reg_addr:0A
 #
-# beacon enable W:03 84 01 4B 0D
+# beacon enable W:03 84 01 4B 0D --> 20211103 customer changed： 0x0A 0x03 0x8F 0x00 0x10
+# -> 20211104: 0x0A, 0x03, 0x84, 0x03, 0x72, 0x0D
 # Tx rate set   W:04 83 00 01 65 0D
 # Tx power set  W:03 82 01 0B 0D
 # Beacon data   W:1F 86 02 1B FF 01 F1 BE AC 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF 1A EB EB EC DD C3 00 1A 0D
@@ -312,17 +313,6 @@ def aslan_pack_beacon_config():
         ret = ret + 1
     time.sleep(0.1)
 
-
-    # # beacon enable
-    #     buf = buffer_array(0x0A,
-    #                        0x03, 0x84, 0x01, 0x4B, 0x0D)
-    #     addr_write(0x42, 0x0A, 0, buf, 6)
-    #     time.sleep(0.1)
-
-    # # beacon disable
-    #     buf = buffer_array(0x0A,
-    #                        0x03, 0x84, 0x00, 0x02, 0x0D)
-    #     addr_write(0x42, 0x0A, 0, buf, 6)
     return ret
 
 
@@ -332,8 +322,10 @@ def aslan_pack_beacon_status(status):
         buffer_array = c_byte * 64
         # beacon enable
         buf = buffer_array(0x0A,
-                           0x03, 0x84, 0x01, 0x4B, 0x0D)
-        if addr_write(0x42, 0x00, 0, buf, 6) is False:
+                           0x03, 0x84, 0x03, 0x72, 0x0D)
+                           ## 0x03, 0x84, 0x01, 0x4B, 0x0D)
+
+        if addr_write(0x42, 0x00, 0, buf, 5) is False:
             ret = ret + 1
         time.sleep(0.1)
         # print("beacon is opened")
@@ -456,7 +448,7 @@ def disable_beacon_mode():
 # dev_addr:21
 # reg_addr:0A
 #
-# beacon enable W:03 84 01 4B 0D
+# beacon enable W:03 84 01 4B 0D --> 20211103 customer changed： 0x0A 0x03 0x8F 0x00 0x10
 # Tx rate set   W:04 83 00 01 65 0D
 # Tx power set  W:03 82 01 0B 0D
 # Beacon data   W:1F 86 02 1B FF 01 F1 BE AC 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF 1A EB EB EC DD C3 00 1A 0D
